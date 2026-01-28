@@ -3,12 +3,6 @@ export const colors = {
   bgMain: '#F4F7F9',
   bgAlt: '#F9F9F9',
   
-  // Glass effect colors
-  glassBackground: 'rgba(255, 255, 255, 0.4)',
-  glassBorder: 'rgba(255, 255, 255, 0.5)',
-  glassBackgroundLight: 'rgba(255, 255, 255, 0.2)',
-  glassBackgroundStrong: 'rgba(255, 255, 255, 0.6)',
-  
   // Primary colors
   charcoal: '#1A1C1E',
   primaryAccent: '#13a4ec',
@@ -24,11 +18,6 @@ export const colors = {
   success: '#10B981',
   warning: '#F59E0B',
   error: '#EF4444',
-  
-  // Priority colors
-  priorityLow: '#10B981',
-  priorityMedium: '#F59E0B',
-  priorityHigh: '#EF4444',
   
   // Course colors (for user selection)
   courseBlue: '#4A90E2',
@@ -48,16 +37,32 @@ export const colors = {
   transparent: 'transparent',
 };
 
+// Derived colors
+export const priorityColors = {
+  priorityLow: colors.success,
+  priorityMedium: colors.warning,
+  priorityHigh: colors.error,
+};
+
+export const opacity = {
+  glass: 'rgba(255, 255, 255, 0.4)',
+  glassBorder: 'rgba(255, 255, 255, 0.5)',
+  glassLight: 'rgba(255, 255, 255, 0.2)',
+  glassStrong: 'rgba(255, 255, 255, 0.6)',
+  glassNav: 'rgba(255, 255, 255, 0.7)',
+  glassNavBorder: 'rgba(255, 255, 255, 0.5)',
+};
+
 export const courseColors = [
-  { name: 'Blue', value: '#4A90E2' },
-  { name: 'Purple', value: '#9333EA' },
-  { name: 'Green', value: '#10B981' },
-  { name: 'Orange', value: '#F59E0B' },
-  { name: 'Red', value: '#EF4444' },
-  { name: 'Pink', value: '#EC4899' },
-  { name: 'Indigo', value: '#6366F1' },
-  { name: 'Teal', value: '#14B8A6' },
-  { name: 'Amber', value: '#FBBF24' },
-  { name: 'Cyan', value: '#06B6D4' },
+  { name: 'Blue', value: colors.courseBlue },
+  { name: 'Purple', value: colors.coursePurple },
+  { name: 'Green', value: colors.courseGreen },
+  { name: 'Orange', value: colors.courseOrange },
+  { name: 'Red', value: colors.courseRed },
+  { name: 'Pink', value: colors.coursePink },
+  { name: 'Indigo', value: colors.courseIndigo },
+  { name: 'Teal', value: colors.courseTeal },
+  { name: 'Amber', value: colors.courseAmber },
+  { name: 'Cyan', value: colors.courseCyan },
 ];
 

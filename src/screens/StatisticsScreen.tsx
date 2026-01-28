@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import React, { useMemo, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, Dimensions, FlatList } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { PieChart, BarChart } from 'react-native-chart-kit';
 import { GlassCard } from '../components/GlassCard';
@@ -9,7 +9,7 @@ import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { commonStyles, spacing } from '../theme/styles';
 import { formatDuration, formatDurationLong } from '../utils/timeHelpers';
-import { formatDate } from '../utils/dateHelpers';
+import { formatDate, isSameDay } from '../utils/dateHelpers';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -50,20 +50,19 @@ const StatisticsScreen = () => {
     const days = [];
     const today = new Date();
     
+    // Group sessions by date first for better performance
+    const sessionMap: { [key: string]: number } = {};
+    sessions.forEach(session => {
+      const dateString = new Date(session.date).toISOString().split('T')[0];
+      sessionMap[dateString] = (sessionMap[dateString] || 0) + session.duration;
+    });
+
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
+      const dateString = date.toISOString().split('T')[0];
       const dayName = formatDate(date, 'EEE');
       
-      const dayTotal = sessions
-        .filter((session) => {
-          const sessionDate = new Date(session.date);
-          return (
-            sessionDate.getFullYear() === date.getFullYear() &&
-            sessionDate.getMonth() === date.getMonth() &&
-            sessionDate.getDate() === date.getDate()
-          );
-        })
-        .reduce((sum, session) => sum + session.duration, 0);
+      const dayTotal = sessionMap[dateString] || 0;
 
       days.push({
         day: dayName,
@@ -75,23 +74,23 @@ const StatisticsScreen = () => {
   }, [sessions]);
 
   // Pie chart data
-  const pieChartData = studyByCourse.slice(0, 5).map((item) => ({
+  const pieChartData = useMemo(() => studyByCourse.slice(0, 5).map((item) => ({
     name: item.courseName,
     population: item.duration / 60, // Convert to minutes
     color: item.courseColor,
     legendFontColor: colors.labelGray,
     legendFontSize: 12,
-  }));
+  })), [studyByCourse]);
 
   // Bar chart data
-  const barChartData = {
+  const barChartData = useMemo(() => ({
     labels: weeklyData.map((d) => d.day),
     datasets: [
       {
         data: weeklyData.map((d) => Math.max(d.hours, 0.1)), // Minimum 0.1 to show bar
       },
     ],
-  };
+  }), [weeklyData]);
 
   const chartConfig = {
     backgroundColor: colors.white,
@@ -116,17 +115,52 @@ const StatisticsScreen = () => {
 
   const weeklyPercentageChange = useMemo(() => {
     // Calculate percentage change from previous week
-    const twoWeeksAgo = new Date(new Date().getTime() - 14 * 24 * 60 * 60 * 1000);
-    const oneWeekAgo = new Date(new Date().getTime() - 7 * 24 * 60 * 60 * 1000);
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
     
     const previousWeekTime = sessions
-      .filter((s) => s.date >= twoWeeksAgo && s.date < oneWeekAgo)
+      .filter((s) => {
+        const sessionDate = new Date(s.date);
+        return sessionDate >= twoWeeksAgo && sessionDate < oneWeekAgo;
+      })
       .reduce((sum, s) => sum + s.duration, 0);
     
     if (previousWeekTime === 0) return weeklyTime > 0 ? 100 : 0;
     
     return Math.round(((weeklyTime - previousWeekTime) / previousWeekTime) * 100);
   }, [sessions, weeklyTime]);
+
+  const recentSessions = useMemo(() => {
+    return sessions
+      .slice()
+      .sort((a, b) => b.date.getTime() - a.date.getTime())
+      .slice(0, 10);
+  }, [sessions]);
+
+  const renderSessionItem = useCallback(({ item: session }: { item: any }) => {
+    const course = courses.find((c) => c.id === session.courseId);
+    return (
+      <GlassCard key={session.id} style={styles.sessionCard}>
+        <View 
+          style={[styles.sessionColorBar, { backgroundColor: course?.color || colors.primaryAccent }]} 
+          accessibilityLabel={`Course color for ${course?.code || 'Unknown'}`}
+        />
+        <View style={styles.sessionContent}>
+          <View style={styles.sessionHeader}>
+            <Text style={styles.sessionCourse}>{course?.code || 'Unknown'}</Text>
+            <Text style={styles.sessionDuration} accessibilityLabel={`Duration: ${formatDurationLong(session.duration)}`}>
+              {formatDurationLong(session.duration)}
+            </Text>
+          </View>
+          <Text style={styles.sessionDate}>{formatDate(session.date, 'MMM dd, yyyy')}</Text>
+          {session.notes && (
+            <Text style={styles.sessionNotes} numberOfLines={2}>{session.notes}</Text>
+          )}
+        </View>
+      </GlassCard>
+    );
+  }, [courses]);
 
   return (
     <View style={commonStyles.container}>
@@ -136,10 +170,12 @@ const StatisticsScreen = () => {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View style={styles.header} accessibilityRole="header">
           <Text style={styles.subtitle}>TOTAL STUDY TIME</Text>
-          <Text style={styles.massiveTime}>{formatDuration(totalTime)}</Text>
-          <View style={styles.changeIndicator}>
+          <Text style={styles.massiveTime} accessibilityLabel={`Total study time: ${formatDuration(totalTime)}`}>
+            {formatDuration(totalTime)}
+          </Text>
+          <View style={styles.changeIndicator} accessibilityLabel={`${Math.abs(weeklyPercentageChange)}% ${weeklyPercentageChange >= 0 ? 'increase' : 'decrease'} from last week`}>
             <MaterialIcons 
               name={weeklyPercentageChange >= 0 ? 'trending-up' : 'trending-down'} 
               size={18} 
@@ -162,16 +198,18 @@ const StatisticsScreen = () => {
               <Text style={styles.sectionSubtitle}>This Week</Text>
             </View>
             <GlassCard style={styles.chartCard}>
-              <PieChart
-                data={pieChartData}
-                width={screenWidth - spacing.lg * 4}
-                height={200}
-                chartConfig={chartConfig}
-                accessor="population"
-                backgroundColor="transparent"
-                paddingLeft="0"
-                absolute
-              />
+              <View accessibilityLabel="Pie chart showing study time distribution by course">
+                <PieChart
+                  data={pieChartData}
+                  width={screenWidth - spacing.lg * 4}
+                  height={200}
+                  chartConfig={chartConfig}
+                  accessor="population"
+                  backgroundColor="transparent"
+                  paddingLeft="0"
+                  absolute
+                />
+              </View>
             </GlassCard>
           </View>
         )}
@@ -183,17 +221,19 @@ const StatisticsScreen = () => {
             <Text style={styles.sectionSubtitle}>Last 7 Days</Text>
           </View>
           <GlassCard style={styles.chartCard}>
-            <BarChart
-              data={barChartData}
-              width={screenWidth - spacing.lg * 4}
-              height={200}
-              yAxisLabel=""
-              yAxisSuffix="h"
-              chartConfig={chartConfig}
-              style={styles.barChart}
-              fromZero
-              showBarTops={false}
-            />
+            <View accessibilityLabel="Bar chart showing study activity trend over the last 7 days">
+              <BarChart
+                data={barChartData}
+                width={screenWidth - spacing.lg * 4}
+                height={200}
+                yAxisLabel=""
+                yAxisSuffix="h"
+                chartConfig={chartConfig}
+                style={styles.barChart}
+                fromZero
+                showBarTops={false}
+              />
+            </View>
           </GlassCard>
         </View>
 
@@ -208,28 +248,15 @@ const StatisticsScreen = () => {
                 <Text style={styles.emptyStateSubtext}>Start a timer to track your study time</Text>
               </GlassCard>
             ) : (
-              sessions
-                .slice()
-                .sort((a, b) => b.date.getTime() - a.date.getTime())
-                .slice(0, 10)
-                .map((session) => {
-                  const course = courses.find((c) => c.id === session.courseId);
-                  return (
-                    <GlassCard key={session.id} style={styles.sessionCard}>
-                      <View style={[styles.sessionColorBar, { backgroundColor: course?.color || colors.primaryAccent }]} />
-                      <View style={styles.sessionContent}>
-                        <View style={styles.sessionHeader}>
-                          <Text style={styles.sessionCourse}>{course?.code || 'Unknown'}</Text>
-                          <Text style={styles.sessionDuration}>{formatDurationLong(session.duration)}</Text>
-                        </View>
-                        <Text style={styles.sessionDate}>{formatDate(session.date, 'MMM dd, yyyy')}</Text>
-                        {session.notes && (
-                          <Text style={styles.sessionNotes} numberOfLines={2}>{session.notes}</Text>
-                        )}
-                      </View>
-                    </GlassCard>
-                  );
-                })
+              <FlatList
+                data={recentSessions}
+                renderItem={renderSessionItem}
+                keyExtractor={(item) => item.id}
+                scrollEnabled={false}
+                contentContainerStyle={{ gap: spacing.sm }}
+                removeClippedSubviews={true}
+                initialNumToRender={5}
+              />
             )}
           </View>
         </View>

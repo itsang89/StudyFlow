@@ -92,6 +92,9 @@ const TabBarButton: React.FC<TabBarButtonProps> = ({ label, icon, isFocused, onP
       onPress={onPress}
       style={styles.tabButton}
       activeOpacity={0.7}
+      accessibilityLabel={`${label} tab`}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: isFocused }}
     >
       <MaterialIcons
         name={icon}

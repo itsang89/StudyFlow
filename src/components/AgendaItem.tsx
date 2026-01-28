@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { GlassCard } from './GlassCard';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/styles';
+import { addOpacity } from '../utils/colorHelpers';
 
 interface AgendaItemProps {
   title: string;
@@ -20,7 +21,7 @@ interface AgendaItemProps {
   onPress?: () => void;
 }
 
-export const AgendaItem: React.FC<AgendaItemProps> = ({
+export const AgendaItem: React.FC<AgendaItemProps> = memo(({
   title,
   subtitle,
   timeRange,
@@ -33,7 +34,7 @@ export const AgendaItem: React.FC<AgendaItemProps> = ({
   const content = (
     <GlassCard style={styles.container}>
       <View style={styles.content}>
-        <View style={[styles.iconContainer, { backgroundColor: `${color}1A` }]}>
+        <View style={[styles.iconContainer, { backgroundColor: addOpacity(color, '1A') }]}>
           <MaterialIcons name={icon} size={24} color={color} />
         </View>
         <View style={styles.textContainer}>
@@ -53,7 +54,7 @@ export const AgendaItem: React.FC<AgendaItemProps> = ({
         </View>
       </View>
       {badge && (
-        <View style={[styles.badge, { backgroundColor: `${badge.color}1A`, borderColor: `${badge.color}33` }]}>
+        <View style={[styles.badge, { backgroundColor: addOpacity(badge.color, '1A'), borderColor: addOpacity(badge.color, '33') }]}>
           <Text style={[styles.badgeText, { color: badge.color }]}>{badge.text}</Text>
         </View>
       )}
@@ -65,7 +66,7 @@ export const AgendaItem: React.FC<AgendaItemProps> = ({
   }
 
   return content;
-};
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -93,7 +94,7 @@ const styles = StyleSheet.create({
   title: {
     ...typography.bodySemibold,
     color: colors.charcoal,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   subtitle: {
     ...typography.small,

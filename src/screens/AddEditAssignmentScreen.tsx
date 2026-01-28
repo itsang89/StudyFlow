@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, KeyboardAvoidingView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -67,16 +67,27 @@ const AddEditAssignmentScreen = () => {
     }
   };
 
-  const selectedCourse = courses.find(c => c.id === courseId);
-
   return (
-    <View style={commonStyles.container}>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={commonStyles.container}
+    >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
+        <TouchableOpacity 
+          onPress={() => navigation.goBack()} 
+          style={styles.headerButton}
+          accessibilityLabel="Cancel and go back"
+          accessibilityRole="button"
+        >
           <MaterialIcons name="close" size={24} color={colors.charcoal} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{isEditing ? 'Edit' : 'Add'} Assignment</Text>
-        <TouchableOpacity onPress={handleSave} style={styles.headerButton}>
+        <TouchableOpacity 
+          onPress={handleSave} 
+          style={styles.headerButton}
+          accessibilityLabel="Save assignment"
+          accessibilityRole="button"
+        >
           <MaterialIcons name="check" size={24} color={colors.primaryAccent} />
         </TouchableOpacity>
       </View>
@@ -95,6 +106,7 @@ const AddEditAssignmentScreen = () => {
             placeholderTextColor={colors.labelGray}
             value={title}
             onChangeText={setTitle}
+            accessibilityLabel="Assignment title input"
           />
         </View>
 
@@ -111,6 +123,9 @@ const AddEditAssignmentScreen = () => {
                 ]}
                 onPress={() => setCourseId(course.id)}
                 activeOpacity={0.7}
+                accessibilityLabel={`Select course ${course.code}`}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: courseId === course.id }}
               >
                 <View style={[styles.courseChipDot, { backgroundColor: course.color }]} />
                 <Text style={[
@@ -131,6 +146,8 @@ const AddEditAssignmentScreen = () => {
             style={styles.dateButton}
             onPress={() => setShowDatePicker(true)}
             activeOpacity={0.7}
+            accessibilityLabel="Change due date and time"
+            accessibilityRole="button"
           >
             <MaterialIcons name="calendar-today" size={20} color={colors.primaryAccent} />
             <Text style={styles.dateButtonText}>{formatDateTime(dueDate)}</Text>
@@ -163,6 +180,9 @@ const AddEditAssignmentScreen = () => {
                 ]}
                 onPress={() => setType(t)}
                 activeOpacity={0.7}
+                accessibilityLabel={`Type: ${t}`}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: type === t }}
               >
                 <Text style={[
                   styles.optionChipText,
@@ -188,6 +208,9 @@ const AddEditAssignmentScreen = () => {
                 ]}
                 onPress={() => setPriority(p)}
                 activeOpacity={0.7}
+                accessibilityLabel={`Priority: ${p}`}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: priority === p }}
               >
                 <Text style={[
                   styles.optionChipText,
@@ -212,6 +235,7 @@ const AddEditAssignmentScreen = () => {
             multiline
             numberOfLines={4}
             textAlignVertical="top"
+            accessibilityLabel="Assignment description input"
           />
         </View>
 
@@ -221,13 +245,15 @@ const AddEditAssignmentScreen = () => {
             style={styles.deleteButton}
             onPress={handleDelete}
             activeOpacity={0.7}
+            accessibilityLabel="Delete this assignment"
+            accessibilityRole="button"
           >
             <MaterialIcons name="delete-outline" size={20} color={colors.error} />
             <Text style={styles.deleteButtonText}>Delete Assignment</Text>
           </TouchableOpacity>
         )}
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 

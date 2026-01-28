@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import React, { useState, useMemo, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, FlatList } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -34,6 +34,7 @@ const HomeScreen = () => {
         if (schedule.day === dayOfWeek) {
           items.push({
             type: 'class',
+            id: `class-${course.id}-${schedule.day}-${schedule.startTime}`,
             course,
             schedule,
             time: schedule.startTime,
@@ -52,6 +53,7 @@ const HomeScreen = () => {
       if (course) {
         items.push({
           type: 'assignment',
+          id: `assignment-${assignment.id}`,
           assignment,
           course,
           time: assignment.dueDate.toISOString(),
@@ -63,13 +65,40 @@ const HomeScreen = () => {
     return items.sort((a, b) => a.time.localeCompare(b.time));
   }, [courses, assignments]);
 
-  const handleStartSession = () => {
+  const handleStartSession = useCallback(() => {
     if (selectedCourseId) {
       navigation.navigate('Timer', { courseId: selectedCourseId });
     } else if (courses.length > 0) {
       setShowCoursePicker(true);
     }
-  };
+  }, [selectedCourseId, courses.length, navigation]);
+
+  const renderAgendaItem = useCallback(({ item }: { item: any }) => {
+    if (item.type === 'class') {
+      return (
+        <AgendaItem
+          title={`${item.course.code}: ${item.course.name}`}
+          timeRange={`${item.schedule.startTime} - ${item.schedule.endTime}`}
+          location={item.course.location}
+          color={item.course.color}
+          icon="school"
+        />
+      );
+    } else {
+      return (
+        <AgendaItem
+          title={item.assignment.title}
+          subtitle={item.course.name}
+          color={colors.warning}
+          icon="assignment-late"
+          badge={{
+            text: getDueDateText(item.assignment.dueDate),
+            color: colors.warning,
+          }}
+        />
+      );
+    }
+  }, []);
 
   const selectedCourse = courses.find((c) => c.id === selectedCourseId);
 
@@ -100,6 +129,8 @@ const HomeScreen = () => {
               style={styles.courseSelector}
               onPress={() => setShowCoursePicker(true)}
               activeOpacity={0.7}
+              accessibilityLabel="Select a course for study session"
+              accessibilityRole="button"
             >
               <View style={styles.courseSelectorContent}>
                 <View style={styles.courseSelectorIcon}>
@@ -121,6 +152,8 @@ const HomeScreen = () => {
               onPress={handleStartSession}
               activeOpacity={0.8}
               disabled={!selectedCourseId}
+              accessibilityLabel="Start studying session"
+              accessibilityRole="button"
             >
               <MaterialIcons name="play-circle-filled" size={28} color={colors.white} />
               <Text style={styles.startButtonText}>Start Session</Text>
@@ -136,7 +169,9 @@ const HomeScreen = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Today's Schedule</Text>
-            <Text style={styles.viewAll}>View all</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('CalendarTab' as any)} accessibilityLabel="View full calendar" accessibilityRole="button">
+              <Text style={styles.viewAll}>View all</Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.agendaList}>
@@ -147,34 +182,17 @@ const HomeScreen = () => {
                 <Text style={styles.emptyStateSubtext}>Enjoy your free day!</Text>
               </GlassCard>
             ) : (
-              todayItems.map((item, index) => {
-                if (item.type === 'class') {
-                  return (
-                    <AgendaItem
-                      key={`class-${index}`}
-                      title={`${item.course.code}: ${item.course.name}`}
-                      timeRange={`${item.schedule.startTime} - ${item.schedule.endTime}`}
-                      location={item.course.location}
-                      color={item.course.color}
-                      icon="school"
-                    />
-                  );
-                } else {
-                  return (
-                    <AgendaItem
-                      key={`assignment-${index}`}
-                      title={item.assignment.title}
-                      subtitle={item.course.name}
-                      color={colors.warning}
-                      icon="assignment-late"
-                      badge={{
-                        text: getDueDateText(item.assignment.dueDate),
-                        color: colors.warning,
-                      }}
-                    />
-                  );
-                }
-              })
+              <FlatList
+                data={todayItems}
+                renderItem={renderAgendaItem}
+                keyExtractor={(item) => item.id}
+                scrollEnabled={false}
+                contentContainerStyle={{ gap: spacing.sm }}
+                removeClippedSubviews={true}
+                initialNumToRender={5}
+                maxToRenderPerBatch={10}
+                windowSize={5}
+              />
             )}
           </View>
         </View>
@@ -191,12 +209,14 @@ const HomeScreen = () => {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Course</Text>
-              <TouchableOpacity onPress={() => setShowCoursePicker(false)}>
+              <TouchableOpacity onPress={() => setShowCoursePicker(false)} accessibilityLabel="Close course picker" accessibilityRole="button">
                 <MaterialIcons name="close" size={24} color={colors.charcoal} />
               </TouchableOpacity>
             </View>
-            <ScrollView>
-              {courses.map((course) => (
+            <FlatList
+              data={courses}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item: course }) => (
                 <TouchableOpacity
                   key={course.id}
                   style={styles.courseOption}
@@ -204,6 +224,8 @@ const HomeScreen = () => {
                     setSelectedCourseId(course.id);
                     setShowCoursePicker(false);
                   }}
+                  accessibilityLabel={`Select course ${course.code} ${course.name}`}
+                  accessibilityRole="button"
                 >
                   <View style={[styles.courseColorDot, { backgroundColor: course.color }]} />
                   <View style={styles.courseOptionText}>
@@ -214,8 +236,8 @@ const HomeScreen = () => {
                     <MaterialIcons name="check" size={24} color={colors.primaryAccent} />
                   )}
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
+              )}
+            />
           </View>
         </View>
       </Modal>

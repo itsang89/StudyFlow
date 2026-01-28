@@ -1,12 +1,21 @@
 import { StyleSheet, ViewStyle } from 'react-native';
-import { colors } from './colors';
+import { colors, opacity } from './colors';
+
+export const borderRadius = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 24,
+  full: 9999,
+};
 
 export const glassStyles = StyleSheet.create({
   card: {
-    backgroundColor: colors.glassBackground,
-    borderRadius: 24,
+    backgroundColor: opacity.glass,
+    borderRadius: borderRadius.xxl,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: opacity.glassBorder,
     shadowColor: 'rgba(31, 38, 135, 0.03)',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 1,
@@ -14,8 +23,8 @@ export const glassStyles = StyleSheet.create({
     elevation: 3,
   },
   cardLight: {
-    backgroundColor: colors.glassBackgroundLight,
-    borderRadius: 24,
+    backgroundColor: opacity.glassLight,
+    borderRadius: borderRadius.xxl,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.4)',
     shadowColor: 'rgba(31, 38, 135, 0.03)',
@@ -25,10 +34,10 @@ export const glassStyles = StyleSheet.create({
     elevation: 3,
   },
   cardStrong: {
-    backgroundColor: colors.glassBackgroundStrong,
-    borderRadius: 20,
+    backgroundColor: opacity.glassStrong,
+    borderRadius: borderRadius.xl,
     borderWidth: 1,
-    borderColor: colors.glassBackgroundStrong,
+    borderColor: opacity.glassStrong,
     shadowColor: 'rgba(0, 0, 0, 0.05)',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
@@ -36,9 +45,9 @@ export const glassStyles = StyleSheet.create({
     elevation: 2,
   },
   nav: {
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    backgroundColor: opacity.glassNav,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.5)',
+    borderTopColor: opacity.glassNavBorder,
   },
 });
 
@@ -75,14 +84,5 @@ export const spacing = {
   lg: 24,
   xl: 32,
   xxl: 48,
-};
-
-export const borderRadius = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  xxl: 24,
-  full: 9999,
 };
 

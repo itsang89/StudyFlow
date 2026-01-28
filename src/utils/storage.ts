@@ -7,6 +7,17 @@ const STORAGE_KEYS = {
   SETTINGS: '@studyflow_settings',
 };
 
+// Helper function to revive Date objects when parsing JSON
+const DATE_FIELDS = ['createdAt', 'dueDate', 'completedDate', 'startTime', 'endTime', 'date'] as const;
+
+function dateReviver(key: string, value: any): any {
+  if (DATE_FIELDS.includes(key as any) && typeof value === 'string') {
+    const date = new Date(value);
+    return isNaN(date.getTime()) ? value : date;
+  }
+  return value;
+}
+
 export const storage = {
   // Generic save function
   async save<T>(key: string, data: T): Promise<void> {
@@ -53,13 +64,3 @@ export const storage = {
 
   keys: STORAGE_KEYS,
 };
-
-// Helper function to revive Date objects when parsing JSON
-function dateReviver(key: string, value: any): any {
-  const dateFields = ['createdAt', 'dueDate', 'completedDate', 'startTime', 'endTime', 'date'];
-  if (dateFields.includes(key) && typeof value === 'string') {
-    return new Date(value);
-  }
-  return value;
-}
-

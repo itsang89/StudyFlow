@@ -1,18 +1,22 @@
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { courseColors } from '../theme/colors';
-import { spacing } from '../theme/styles';
+import { spacing, commonStyles } from '../theme/styles';
 
 interface CourseColorPickerProps {
   selectedColor: string;
   onColorSelect: (color: string) => void;
 }
 
-export const CourseColorPicker: React.FC<CourseColorPickerProps> = ({
+export const CourseColorPicker: React.FC<CourseColorPickerProps> = memo(({
   selectedColor,
   onColorSelect,
 }) => {
+  const handleColorPress = useCallback((color: string) => {
+    onColorSelect(color);
+  }, [onColorSelect]);
+
   return (
     <View style={styles.container}>
       {courseColors.map((colorOption) => (
@@ -21,10 +25,13 @@ export const CourseColorPicker: React.FC<CourseColorPickerProps> = ({
           style={[
             styles.colorButton,
             { backgroundColor: colorOption.value },
-            selectedColor === colorOption.value && styles.selected,
+            selectedColor === colorOption.value ? styles.selected : styles.unselected,
           ]}
-          onPress={() => onColorSelect(colorOption.value)}
+          onPress={() => handleColorPress(colorOption.value)}
           activeOpacity={0.7}
+          accessibilityLabel={`Select course color ${colorOption.name}`}
+          accessibilityRole="radio"
+          accessibilityState={{ checked: selectedColor === colorOption.value }}
         >
           {selectedColor === colorOption.value && (
             <MaterialIcons name="check" size={20} color="#FFFFFF" />
@@ -33,7 +40,7 @@ export const CourseColorPicker: React.FC<CourseColorPickerProps> = ({
       ))}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -47,18 +54,12 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+  },
+  unselected: {
+    ...commonStyles.shadow,
   },
   selected: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    ...commonStyles.shadowLarge,
   },
 });
 

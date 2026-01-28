@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, AppState, AppStateStatus } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, AppState, AppStateStatus, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -52,15 +52,7 @@ const TimerScreen = () => {
     };
   }, [isRunning]);
 
-  // Background timer support
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
-    return () => {
-      subscription.remove();
-    };
-  }, [isRunning]);
-
-  const handleAppStateChange = (nextAppState: AppStateStatus) => {
+  const handleAppStateChange = useCallback((nextAppState: AppStateStatus) => {
     if (nextAppState === 'background' && isRunning) {
       backgroundTimeRef.current = new Date();
     } else if (nextAppState === 'active' && isRunning && backgroundTimeRef.current) {
@@ -68,16 +60,24 @@ const TimerScreen = () => {
       setSeconds((prev) => prev + timeInBackground);
       backgroundTimeRef.current = null;
     }
-  };
+  }, [isRunning]);
 
-  const handlePause = () => {
+  // Background timer support
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => {
+      subscription.remove();
+    };
+  }, [handleAppStateChange]);
+
+  const handlePause = useCallback(() => {
     setIsRunning(!isRunning);
-  };
+  }, [isRunning]);
 
-  const handleStop = () => {
+  const handleStop = useCallback(() => {
     setIsRunning(false);
     setShowCompleteModal(true);
-  };
+  }, []);
 
   const handleSaveSession = async () => {
     const endTime = new Date();
@@ -104,7 +104,12 @@ const TimerScreen = () => {
     return (
       <View style={[commonStyles.container, commonStyles.centerContent]}>
         <Text style={styles.errorText}>Course not found</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity 
+          onPress={() => navigation.goBack()} 
+          style={styles.backButton}
+          accessibilityLabel="Go back"
+          accessibilityRole="button"
+        >
           <Text style={styles.backButtonText}>Go Back</Text>
         </TouchableOpacity>
       </View>
@@ -120,7 +125,7 @@ const TimerScreen = () => {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.courseCode}>{course.code}</Text>
-        <View style={styles.statusBadge}>
+        <View style={styles.statusBadge} accessibilityLabel={`Timer status: ${isRunning ? 'active' : 'paused'}`}>
           <View style={[styles.statusDot, isRunning && styles.statusDotActive]} />
           <Text style={styles.statusText}>{isRunning ? 'Focus Active' : 'Paused'}</Text>
         </View>
@@ -129,7 +134,7 @@ const TimerScreen = () => {
       {/* Timer Display */}
       <View style={styles.timerContainer}>
         <GlassCard style={styles.timerCircle}>
-          <View style={styles.timerInner}>
+          <View style={styles.timerInner} accessibilityLabel={`Elapsed time: ${formatTimerDisplay(seconds)}`}>
             <Text style={styles.timerText}>{formatTimerDisplay(seconds)}</Text>
             <Text style={styles.timerLabel}>ELAPSED</Text>
           </View>
@@ -143,6 +148,8 @@ const TimerScreen = () => {
             style={[styles.controlButton, styles.controlButtonSecondary]}
             onPress={handlePause}
             activeOpacity={0.8}
+            accessibilityLabel={isRunning ? "Pause timer" : "Resume timer"}
+            accessibilityRole="button"
           >
             <MaterialIcons 
               name={isRunning ? 'pause' : 'play-arrow'} 
@@ -158,6 +165,8 @@ const TimerScreen = () => {
             style={[styles.controlButton, styles.controlButtonSecondary]}
             onPress={handleStop}
             activeOpacity={0.8}
+            accessibilityLabel="Stop and end study session"
+            accessibilityRole="button"
           >
             <MaterialIcons name="stop" size={24} color={colors.charcoal} />
             <Text style={styles.controlButtonTextSecondary}>End</Text>
@@ -166,12 +175,12 @@ const TimerScreen = () => {
 
         {/* Stats */}
         <View style={styles.stats}>
-          <View style={styles.statItem}>
+          <View style={styles.statItem} accessibilityLabel="Current study streak">
             <Text style={styles.statLabel}>STREAK</Text>
             <Text style={styles.statValue}>- Days</Text>
           </View>
           <View style={styles.statDivider} />
-          <View style={styles.statItem}>
+          <View style={styles.statItem} accessibilityLabel={`Total study time today: ${formatDuration(todayStudyTime + seconds)}`}>
             <Text style={styles.statLabel}>TODAY</Text>
             <Text style={styles.statValue}>{formatDuration(todayStudyTime + seconds)}</Text>
           </View>
@@ -185,58 +194,68 @@ const TimerScreen = () => {
         animationType="fade"
         onRequestClose={() => setShowCompleteModal(false)}
       >
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
           <GlassCard style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <MaterialIcons name="check-circle" size={64} color={colors.success} />
-              <Text style={styles.modalTitle}>Session Complete!</Text>
-              <Text style={styles.modalSubtitle}>Great work today</Text>
-            </View>
-
-            <View style={styles.modalStats}>
-              <View style={styles.modalStatItem}>
-                <Text style={styles.modalStatLabel}>Duration</Text>
-                <Text style={styles.modalStatValue}>{formatDuration(seconds)}</Text>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.modalHeader}>
+                <MaterialIcons name="check-circle" size={64} color={colors.success} />
+                <Text style={styles.modalTitle}>Session Complete!</Text>
+                <Text style={styles.modalSubtitle}>Great work today</Text>
               </View>
-              <View style={styles.modalStatDivider} />
-              <View style={styles.modalStatItem}>
-                <Text style={styles.modalStatLabel}>Course</Text>
-                <Text style={styles.modalStatValue}>{course.code}</Text>
+
+              <View style={styles.modalStats}>
+                <View style={styles.modalStatItem} accessibilityLabel={`Duration: ${formatDuration(seconds)}`}>
+                  <Text style={styles.modalStatLabel}>Duration</Text>
+                  <Text style={styles.modalStatValue}>{formatDuration(seconds)}</Text>
+                </View>
+                <View style={styles.modalStatDivider} />
+                <View style={styles.modalStatItem} accessibilityLabel={`Course: ${course.code}`}>
+                  <Text style={styles.modalStatLabel}>Course</Text>
+                  <Text style={styles.modalStatValue}>{course.code}</Text>
+                </View>
               </View>
-            </View>
 
-            <View style={styles.notesSection}>
-              <Text style={styles.notesLabel}>Session Notes (Optional)</Text>
-              <TextInput
-                style={styles.notesInput}
-                placeholder="Add any notes about this study session..."
-                placeholderTextColor={colors.labelGray}
-                multiline
-                numberOfLines={4}
-                value={notes}
-                onChangeText={setNotes}
-                textAlignVertical="top"
-              />
-            </View>
+              <View style={styles.notesSection}>
+                <Text style={styles.notesLabel}>Session Notes (Optional)</Text>
+                <TextInput
+                  style={styles.notesInput}
+                  placeholder="Add any notes about this study session..."
+                  placeholderTextColor={colors.labelGray}
+                  multiline
+                  numberOfLines={4}
+                  value={notes}
+                  onChangeText={setNotes}
+                  textAlignVertical="top"
+                  accessibilityLabel="Study session notes input"
+                />
+              </View>
 
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonSecondary]}
-                onPress={handleDiscard}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.modalButtonTextSecondary}>Discard</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonPrimary]}
-                onPress={handleSaveSession}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.modalButtonText}>Save Session</Text>
-              </TouchableOpacity>
-            </View>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonSecondary]}
+                  onPress={handleDiscard}
+                  activeOpacity={0.8}
+                  accessibilityLabel="Discard this session"
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.modalButtonTextSecondary}>Discard</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonPrimary]}
+                  onPress={handleSaveSession}
+                  activeOpacity={0.8}
+                  accessibilityLabel="Save study session"
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.modalButtonText}>Save Session</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </GlassCard>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

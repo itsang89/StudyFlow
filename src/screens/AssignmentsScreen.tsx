@@ -1,12 +1,12 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useMemo, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SectionList } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { GlassCard } from '../components/GlassCard';
 import { useAssignments } from '../context/AssignmentContext';
 import { useCourses } from '../context/CourseContext';
-import { colors } from '../theme/colors';
+import { colors, priorityColors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { commonStyles, spacing } from '../theme/styles';
 import { ToDoStackParamList } from '../navigation/types';
@@ -38,45 +38,65 @@ const AssignmentsScreen = () => {
     });
   }, [assignments, filter]);
 
-  const { dueSoon, later } = useMemo(() => {
+  const sections = useMemo(() => {
     const now = new Date();
     const twoDaysFromNow = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
     
     const pending = filteredAssignments.filter(a => !a.completed);
+    const completed = filteredAssignments.filter(a => a.completed);
     
-    return {
-      dueSoon: pending.filter(a => a.dueDate <= twoDaysFromNow),
-      later: pending.filter(a => a.dueDate > twoDaysFromNow),
-    };
-  }, [filteredAssignments]);
+    const data = [];
+    
+    const dueSoonItems = pending.filter(a => a.dueDate <= twoDaysFromNow);
+    if (dueSoonItems.length > 0) {
+      data.push({ title: 'DUE SOON', data: dueSoonItems });
+    }
+    
+    const laterItems = pending.filter(a => a.dueDate > twoDaysFromNow);
+    if (laterItems.length > 0) {
+      data.push({ title: 'LATER', data: laterItems });
+    }
+    
+    if (filter === 'all' && completed.length > 0) {
+      data.push({ title: 'COMPLETED', data: completed });
+    } else if (filter === 'completed' && completed.length > 0) {
+      data.push({ title: 'COMPLETED', data: completed });
+    }
+    
+    return data;
+  }, [filteredAssignments, filter]);
 
   const completedCount = assignments.filter(a => a.completed).length;
   const totalCount = assignments.length;
   const completionPercentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = useCallback((priority: string) => {
     switch (priority) {
-      case 'high': return colors.priorityHigh;
-      case 'medium': return colors.priorityMedium;
-      default: return colors.priorityLow;
+      case 'high': return priorityColors.priorityHigh;
+      case 'medium': return priorityColors.priorityMedium;
+      default: return priorityColors.priorityLow;
     }
-  };
+  }, []);
 
-  const renderAssignmentItem = (assignment: Assignment) => {
+  const renderAssignmentItem = useCallback(({ item: assignment }: { item: Assignment }) => {
     const course = getCourseById(assignment.courseId);
     const priorityColor = getPriorityColor(assignment.priority);
 
     return (
       <TouchableOpacity
-        key={assignment.id}
         onPress={() => navigation.navigate('AddEditAssignment', { assignmentId: assignment.id })}
         activeOpacity={0.7}
+        accessibilityLabel={`Edit assignment: ${assignment.title}`}
+        accessibilityRole="button"
       >
         <GlassCard style={[styles.assignmentCard, assignment.completed && styles.completedCard]}>
           <TouchableOpacity
             style={styles.checkbox}
             onPress={() => toggleComplete(assignment.id)}
             activeOpacity={0.7}
+            accessibilityLabel={assignment.completed ? "Mark as incomplete" : "Mark as complete"}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: assignment.completed }}
           >
             <View style={[
               styles.checkboxInner,
@@ -110,81 +130,62 @@ const AssignmentsScreen = () => {
         </GlassCard>
       </TouchableOpacity>
     );
-  };
+  }, [getCourseById, getPriorityColor, navigation, toggleComplete]);
+
+  const ListHeader = useMemo(() => (
+    <View style={styles.header}>
+      <View style={styles.headerTop}>
+        <Text style={styles.title}>Assignments</Text>
+        <TouchableOpacity style={styles.searchButton} accessibilityLabel="Search assignments" accessibilityRole="button">
+          <MaterialIcons name="search" size={20} color={colors.textSecondary} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Progress */}
+      <View style={styles.progressSection}>
+        <View style={styles.progressHeader}>
+          <Text style={styles.progressLabel}>DAILY COMPLETION</Text>
+          <Text style={styles.progressCount}>{completedCount} / {totalCount}</Text>
+        </View>
+        <View style={styles.progressBar}>
+          <View style={[styles.progressFill, { width: `${completionPercentage}%` }]} />
+        </View>
+      </View>
+    </View>
+  ), [completedCount, totalCount, completionPercentage]);
+
+  const EmptyState = useMemo(() => (
+    <GlassCard style={styles.emptyState}>
+      <MaterialIcons name="assignment-turned-in" size={64} color={colors.labelGray} style={{ opacity: 0.3 }} />
+      <Text style={styles.emptyStateText}>No assignments yet</Text>
+      <Text style={styles.emptyStateSubtext}>Tap + to add your first assignment</Text>
+    </GlassCard>
+  ), []);
 
   return (
     <View style={commonStyles.container}>
-      <ScrollView 
-        style={styles.scrollView}
+      <SectionList
+        sections={sections}
+        keyExtractor={(item) => item.id}
+        renderItem={renderAssignmentItem}
+        renderSectionHeader={({ section: { title } }) => (
+          <Text style={styles.sectionTitle}>{title}</Text>
+        )}
+        ListHeaderComponent={ListHeader}
+        ListEmptyComponent={EmptyState}
         contentContainerStyle={styles.contentContainer}
+        stickySectionHeadersEnabled={false}
         showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <Text style={styles.title}>Assignments</Text>
-            <TouchableOpacity style={styles.searchButton}>
-              <MaterialIcons name="search" size={20} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Progress */}
-          <View style={styles.progressSection}>
-            <View style={styles.progressHeader}>
-              <Text style={styles.progressLabel}>DAILY COMPLETION</Text>
-              <Text style={styles.progressCount}>{completedCount} / {totalCount}</Text>
-            </View>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${completionPercentage}%` }]} />
-            </View>
-          </View>
-        </View>
-
-        {/* Due Soon Section */}
-        {dueSoon.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>DUE SOON</Text>
-            <View style={styles.assignmentsList}>
-              {dueSoon.map(renderAssignmentItem)}
-            </View>
-          </View>
-        )}
-
-        {/* Later Section */}
-        {later.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>LATER</Text>
-            <View style={styles.assignmentsList}>
-              {later.map(renderAssignmentItem)}
-            </View>
-          </View>
-        )}
-
-        {/* Completed Section */}
-        {filter === 'all' && completedCount > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>COMPLETED</Text>
-            <View style={styles.assignmentsList}>
-              {filteredAssignments.filter(a => a.completed).map(renderAssignmentItem)}
-            </View>
-          </View>
-        )}
-
-        {/* Empty State */}
-        {filteredAssignments.length === 0 && (
-          <GlassCard style={styles.emptyState}>
-            <MaterialIcons name="assignment-turned-in" size={64} color={colors.labelGray} style={{ opacity: 0.3 }} />
-            <Text style={styles.emptyStateText}>No assignments yet</Text>
-            <Text style={styles.emptyStateSubtext}>Tap + to add your first assignment</Text>
-          </GlassCard>
-        )}
-      </ScrollView>
+        removeClippedSubviews={true}
+      />
 
       {/* Floating Add Button */}
       <TouchableOpacity
         style={styles.fab}
         onPress={() => navigation.navigate('AddEditAssignment', {})}
         activeOpacity={0.8}
+        accessibilityLabel="Add new assignment"
+        accessibilityRole="button"
       >
         <MaterialIcons name="add" size={28} color={colors.white} />
       </TouchableOpacity>
@@ -193,9 +194,6 @@ const AssignmentsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
   contentContainer: {
     paddingTop: spacing.xl + 16,
     paddingHorizontal: spacing.lg,
@@ -215,9 +213,9 @@ const styles = StyleSheet.create({
     color: colors.charcoal,
   },
   searchButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: 'rgba(255, 255, 255, 0.5)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -252,29 +250,29 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: colors.accentBlue,
   },
-  section: {
-    marginBottom: spacing.xl,
-  },
   sectionTitle: {
     ...typography.label,
     color: colors.textSecondary,
     marginBottom: spacing.md,
+    marginTop: spacing.lg,
     paddingHorizontal: spacing.xs,
-  },
-  assignmentsList: {
-    gap: spacing.sm,
   },
   assignmentCard: {
     padding: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    marginBottom: spacing.sm,
   },
   completedCard: {
     opacity: 0.5,
   },
   checkbox: {
-    padding: spacing.xs,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: -spacing.xs,
   },
   checkboxInner: {
     width: 22,

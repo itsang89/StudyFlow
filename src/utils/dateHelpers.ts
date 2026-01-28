@@ -1,4 +1,4 @@
-import { format, isToday, isTomorrow, isThisWeek, differenceInHours, differenceInDays } from 'date-fns';
+import { format, isToday, isTomorrow, isThisWeek, differenceInHours, differenceInDays, isSameDay as dateFnsIsSameDay } from 'date-fns';
 
 export const formatDate = (date: Date, formatStr: string = 'MMM dd, yyyy'): string => {
   return format(date, formatStr);
@@ -49,24 +49,24 @@ export const getDueDateText = (dueDate: Date): string => {
 };
 
 export const getDayName = (dayIndex: number): string => {
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  return days[dayIndex] || '';
+  const date = new Date();
+  const currentDay = date.getDay();
+  const diff = dayIndex - currentDay;
+  date.setDate(date.getDate() + diff);
+  return format(date, 'EEEE');
 };
 
 export const getDayShortName = (dayIndex: number): string => {
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  return days[dayIndex] || '';
+  const date = new Date();
+  const currentDay = date.getDay();
+  const diff = dayIndex - currentDay;
+  date.setDate(date.getDate() + diff);
+  return format(date, 'EEE');
 };
 
 export const isDateInPast = (date: Date): boolean => {
   return date < new Date();
 };
 
-export const isSameDay = (date1: Date, date2: Date): boolean => {
-  return (
-    date1.getFullYear() === date2.getFullYear() &&
-    date1.getMonth() === date2.getMonth() &&
-    date1.getDate() === date2.getDate()
-  );
-};
+export const isSameDay = dateFnsIsSameDay;
 

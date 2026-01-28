@@ -1,10 +1,12 @@
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, ReactNode, useCallback, useMemo, useRef } from 'react';
+import { Alert } from 'react-native';
 import { Assignment, AssignmentFormData } from '../types/assignment';
 import { storage } from '../utils/storage';
 
 interface AssignmentState {
   assignments: Assignment[];
   loading: boolean;
+  error: string | null;
 }
 
 type AssignmentAction =
@@ -13,7 +15,8 @@ type AssignmentAction =
   | { type: 'UPDATE_ASSIGNMENT'; payload: Assignment }
   | { type: 'DELETE_ASSIGNMENT'; payload: string }
   | { type: 'TOGGLE_COMPLETE'; payload: string }
-  | { type: 'SET_LOADING'; payload: boolean };
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_ERROR'; payload: string | null };
 
 interface AssignmentContextType extends AssignmentState {
   addAssignment: (assignmentData: AssignmentFormData) => Promise<void>;
@@ -30,20 +33,22 @@ const AssignmentContext = createContext<AssignmentContextType | undefined>(undef
 const assignmentReducer = (state: AssignmentState, action: AssignmentAction): AssignmentState => {
   switch (action.type) {
     case 'SET_ASSIGNMENTS':
-      return { ...state, assignments: action.payload, loading: false };
+      return { ...state, assignments: action.payload, loading: false, error: null };
     case 'ADD_ASSIGNMENT':
-      return { ...state, assignments: [...state.assignments, action.payload] };
+      return { ...state, assignments: [...state.assignments, action.payload], error: null };
     case 'UPDATE_ASSIGNMENT':
       return {
         ...state,
         assignments: state.assignments.map((assignment) =>
           assignment.id === action.payload.id ? action.payload : assignment
         ),
+        error: null,
       };
     case 'DELETE_ASSIGNMENT':
       return {
         ...state,
         assignments: state.assignments.filter((assignment) => assignment.id !== action.payload),
+        error: null,
       };
     case 'TOGGLE_COMPLETE':
       return {
@@ -57,40 +62,58 @@ const assignmentReducer = (state: AssignmentState, action: AssignmentAction): As
               }
             : assignment
         ),
+        error: null,
       };
     case 'SET_LOADING':
       return { ...state, loading: action.payload };
+    case 'SET_ERROR':
+      return { ...state, error: action.payload, loading: false };
     default:
       return state;
   }
 };
 
 export const AssignmentProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(assignmentReducer, { assignments: [], loading: true });
+  const [state, dispatch] = useReducer(assignmentReducer, { assignments: [], loading: true, error: null });
+  const isInitialMount = useRef(true);
 
-  useEffect(() => {
-    loadAssignments();
-  }, []);
-
-  const loadAssignments = async () => {
+  const loadAssignments = useCallback(async () => {
     try {
       const assignments = await storage.load<Assignment[]>(storage.keys.ASSIGNMENTS);
       dispatch({ type: 'SET_ASSIGNMENTS', payload: assignments || [] });
     } catch (error) {
       console.error('Error loading assignments:', error);
-      dispatch({ type: 'SET_LOADING', payload: false });
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to load assignments' });
     }
-  };
+  }, []);
 
-  const saveAssignments = async (assignments: Assignment[]) => {
-    try {
-      await storage.save(storage.keys.ASSIGNMENTS, assignments);
-    } catch (error) {
-      console.error('Error saving assignments:', error);
+  useEffect(() => {
+    loadAssignments();
+  }, [loadAssignments]);
+
+  // Persist assignments to storage whenever they change
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
     }
-  };
 
-  const addAssignment = async (assignmentData: AssignmentFormData) => {
+    const saveAssignments = async () => {
+      try {
+        await storage.save(storage.keys.ASSIGNMENTS, state.assignments);
+      } catch (error) {
+        console.error('Error saving assignments:', error);
+        dispatch({ type: 'SET_ERROR', payload: 'Failed to save changes' });
+        Alert.alert('Error', 'Failed to save assignment changes. Please try again.');
+      }
+    };
+
+    if (!state.loading) {
+      saveAssignments();
+    }
+  }, [state.assignments, state.loading]);
+
+  const addAssignment = useCallback(async (assignmentData: AssignmentFormData): Promise<void> => {
     const newAssignment: Assignment = {
       ...assignmentData,
       id: Date.now().toString(),
@@ -98,10 +121,9 @@ export const AssignmentProvider: React.FC<{ children: ReactNode }> = ({ children
       createdAt: new Date(),
     };
     dispatch({ type: 'ADD_ASSIGNMENT', payload: newAssignment });
-    await saveAssignments([...state.assignments, newAssignment]);
-  };
+  }, []);
 
-  const updateAssignment = async (id: string, assignmentData: AssignmentFormData) => {
+  const updateAssignment = useCallback(async (id: string, assignmentData: AssignmentFormData): Promise<void> => {
     const existingAssignment = state.assignments.find((a) => a.id === id);
     if (!existingAssignment) return;
 
@@ -110,60 +132,53 @@ export const AssignmentProvider: React.FC<{ children: ReactNode }> = ({ children
       ...assignmentData,
     };
     dispatch({ type: 'UPDATE_ASSIGNMENT', payload: updatedAssignment });
-    const updatedAssignments = state.assignments.map((a) =>
-      a.id === id ? updatedAssignment : a
-    );
-    await saveAssignments(updatedAssignments);
-  };
+  }, [state.assignments]);
 
-  const deleteAssignment = async (id: string) => {
+  const deleteAssignment = useCallback(async (id: string): Promise<void> => {
     dispatch({ type: 'DELETE_ASSIGNMENT', payload: id });
-    const updatedAssignments = state.assignments.filter((a) => a.id !== id);
-    await saveAssignments(updatedAssignments);
-  };
+  }, []);
 
-  const toggleComplete = async (id: string) => {
+  const toggleComplete = useCallback(async (id: string): Promise<void> => {
     dispatch({ type: 'TOGGLE_COMPLETE', payload: id });
-    const updatedAssignments = state.assignments.map((assignment) =>
-      assignment.id === id
-        ? {
-            ...assignment,
-            completed: !assignment.completed,
-            completedDate: !assignment.completed ? new Date() : undefined,
-          }
-        : assignment
-    );
-    await saveAssignments(updatedAssignments);
-  };
+  }, []);
 
-  const getAssignmentById = (id: string): Assignment | undefined => {
+  const getAssignmentById = useCallback((id: string): Assignment | undefined => {
     return state.assignments.find((a) => a.id === id);
-  };
+  }, [state.assignments]);
 
-  const getAssignmentsByCourse = (courseId: string): Assignment[] => {
+  const getAssignmentsByCourse = useCallback((courseId: string): Assignment[] => {
     return state.assignments.filter((a) => a.courseId === courseId);
-  };
+  }, [state.assignments]);
 
-  const getUpcomingAssignments = (): Assignment[] => {
+  const getUpcomingAssignments = useCallback(() : Assignment[] => {
     const now = new Date();
     return state.assignments
       .filter((a) => !a.completed && a.dueDate >= now)
       .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
-  };
+  }, [state.assignments]);
+
+  const contextValue = useMemo(() => ({
+    ...state,
+    addAssignment,
+    updateAssignment,
+    deleteAssignment,
+    toggleComplete,
+    getAssignmentById,
+    getAssignmentsByCourse,
+    getUpcomingAssignments,
+  }), [
+    state,
+    addAssignment,
+    updateAssignment,
+    deleteAssignment,
+    toggleComplete,
+    getAssignmentById,
+    getAssignmentsByCourse,
+    getUpcomingAssignments
+  ]);
 
   return (
-    <AssignmentContext.Provider
-      value={{
-        ...state,
-        addAssignment,
-        updateAssignment,
-        deleteAssignment,
-        toggleComplete,
-        getAssignmentById,
-        getAssignmentsByCourse,
-        getUpcomingAssignments,
-      }}
-    >
+    <AssignmentContext.Provider value={contextValue}>
       {children}
     </AssignmentContext.Provider>
   );

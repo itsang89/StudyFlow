@@ -21,7 +21,12 @@ const CoursesListScreen = () => {
     <View style={commonStyles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity 
+          onPress={() => navigation.goBack()} 
+          style={styles.backButton}
+          accessibilityLabel="Go back"
+          accessibilityRole="button"
+        >
           <MaterialIcons name="arrow-back" size={24} color={colors.charcoal} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Courses</Text>
@@ -46,9 +51,14 @@ const CoursesListScreen = () => {
                 key={course.id}
                 onPress={() => navigation.navigate('AddEditCourse', { courseId: course.id })}
                 activeOpacity={0.7}
+                accessibilityLabel={`Edit course ${course.code} ${course.name}`}
+                accessibilityRole="button"
               >
                 <GlassCard style={styles.courseCard}>
-                  <View style={[styles.courseColorBar, { backgroundColor: course.color }]} />
+                  <View 
+                    style={[styles.courseColorBar, { backgroundColor: course.color }]} 
+                    accessibilityLabel="Course color"
+                  />
                   <View style={styles.courseContent}>
                     <View style={styles.courseHeader}>
                       <View style={styles.courseInfo}>
@@ -75,7 +85,7 @@ const CoursesListScreen = () => {
                     {course.schedule.length > 0 && (
                       <View style={styles.scheduleChips}>
                         {course.schedule.map((schedule, index) => (
-                          <View key={index} style={styles.scheduleChip}>
+                          <View key={index} style={styles.scheduleChip} accessibilityLabel={`Class at ${schedule.startTime}`}>
                             <Text style={styles.scheduleChipText}>
                               {getDayShortName(schedule.day)} {schedule.startTime}
                             </Text>
@@ -96,6 +106,8 @@ const CoursesListScreen = () => {
         style={styles.fab}
         onPress={() => navigation.navigate('AddEditCourse', {})}
         activeOpacity={0.8}
+        accessibilityLabel="Add new course"
+        accessibilityRole="button"
       >
         <MaterialIcons name="add" size={28} color={colors.white} />
       </TouchableOpacity>

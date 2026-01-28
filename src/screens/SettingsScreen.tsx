@@ -111,6 +111,8 @@ const SettingsScreen = () => {
                 onValueChange={toggleTheme}
                 trackColor={{ false: colors.labelGray, true: colors.primaryAccent }}
                 thumbColor={colors.white}
+                accessibilityLabel="Toggle dark mode"
+                accessibilityRole="switch"
               />
             </View>
           </GlassCard>
@@ -133,6 +135,8 @@ const SettingsScreen = () => {
                 onValueChange={() => toggleNotification('classReminders')}
                 trackColor={{ false: colors.labelGray, true: colors.primaryAccent }}
                 thumbColor={colors.white}
+                accessibilityLabel="Toggle class reminders"
+                accessibilityRole="switch"
               />
             </View>
             <View style={styles.divider} />
@@ -149,6 +153,8 @@ const SettingsScreen = () => {
                 onValueChange={() => toggleNotification('assignmentAlerts')}
                 trackColor={{ false: colors.labelGray, true: colors.primaryAccent }}
                 thumbColor={colors.white}
+                accessibilityLabel="Toggle assignment alerts"
+                accessibilityRole="switch"
               />
             </View>
           </GlassCard>
@@ -160,6 +166,8 @@ const SettingsScreen = () => {
           <TouchableOpacity
             onPress={() => navigation.navigate('CoursesList')}
             activeOpacity={0.7}
+            accessibilityLabel="Manage your courses"
+            accessibilityRole="button"
           >
             <GlassCard style={styles.card}>
               <View style={styles.settingItem}>
@@ -179,6 +187,8 @@ const SettingsScreen = () => {
           <TouchableOpacity
             onPress={handleClearData}
             activeOpacity={0.7}
+            accessibilityLabel="Clear all app data"
+            accessibilityRole="button"
           >
             <GlassCard style={styles.card}>
               <View style={styles.settingItem}>
@@ -273,13 +283,17 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.8)',
   },
   saveButton: {
-    padding: spacing.xs,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
+    minHeight: 44,
   },
   settingInfo: {
     flexDirection: 'row',

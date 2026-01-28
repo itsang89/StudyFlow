@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useMemo, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -35,6 +35,7 @@ const CalendarScreen = () => {
           if (schedule.day === dayOfWeek) {
             events.push({
               type: 'class',
+              id: `class-${course.id}-${schedule.day}-${schedule.startTime}`,
               course,
               schedule,
               time: schedule.startTime,
@@ -55,6 +56,7 @@ const CalendarScreen = () => {
         if (course) {
           events.push({
             type: 'assignment',
+            id: `assignment-${assignment.id}`,
             assignment,
             course,
             time: assignment.dueDate.toISOString(),
@@ -70,22 +72,32 @@ const CalendarScreen = () => {
   const markedDates = useMemo(() => {
     const marked: any = {};
 
-    // Mark days with classes
+    // Get all dates that have assignments (more efficient to group assignments first)
+    const assignmentDates = new Set();
+    assignments.forEach(assignment => {
+      if (!assignment.completed) {
+        assignmentDates.add(assignment.dueDate.toISOString().split('T')[0]);
+      }
+    });
+
+    // Get all days of week that have classes
+    const classDays = new Set();
+    courses.forEach(course => {
+      course.schedule.forEach(s => classDays.add(s.day));
+    });
+
+    // Mark days with events (limit to a reasonable range)
     const today = new Date();
-    for (let i = 0; i < 60; i++) {
-      const date = new Date(today.getTime() + i * 24 * 60 * 60 * 1000);
-      const dayOfWeek = date.getDay();
+    const startDate = new Date(today);
+    startDate.setMonth(today.getMonth() - 1); // 1 month ago
+    
+    for (let i = 0; i < 120; i++) {
+      const date = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
       const dateString = date.toISOString().split('T')[0];
+      const dayOfWeek = date.getDay();
 
-      // Check if there are classes on this day
-      const hasClasses = courses.some((course) =>
-        course.schedule.some((schedule) => schedule.day === dayOfWeek)
-      );
-
-      // Check if there are assignments on this day
-      const hasAssignments = assignments.some(
-        (assignment) => !assignment.completed && isSameDay(assignment.dueDate, date)
-      );
+      const hasClasses = classDays.has(dayOfWeek);
+      const hasAssignments = assignmentDates.has(dateString);
 
       if (hasClasses || hasAssignments) {
         marked[dateString] = {
@@ -106,9 +118,36 @@ const CalendarScreen = () => {
     return marked;
   }, [courses, assignments, selectedDate]);
 
-  const handleDayPress = (day: DateData) => {
+  const handleDayPress = useCallback((day: DateData) => {
     setSelectedDate(new Date(day.timestamp));
-  };
+  }, []);
+
+  const renderAgendaItem = useCallback(({ item }: { item: any }) => {
+    if (item.type === 'class') {
+      return (
+        <AgendaItem
+          title={`${item.course.code}: ${item.course.name}`}
+          timeRange={`${item.schedule.startTime} - ${item.schedule.endTime}`}
+          location={item.course.location}
+          color={item.course.color}
+          icon="school"
+        />
+      );
+    } else {
+      return (
+        <AgendaItem
+          title={item.assignment.title}
+          subtitle={item.course.name}
+          color={colors.warning}
+          icon="assignment-late"
+          badge={{
+            text: getDueDateText(item.assignment.dueDate),
+            color: colors.warning,
+          }}
+        />
+      );
+    }
+  }, []);
 
   return (
     <View style={commonStyles.container}>
@@ -120,7 +159,12 @@ const CalendarScreen = () => {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Calendar</Text>
-          <TouchableOpacity style={styles.weekViewButton} onPress={() => navigation.navigate('WeekView')}>
+          <TouchableOpacity 
+            style={styles.weekViewButton} 
+            onPress={() => navigation.navigate('WeekView')}
+            accessibilityLabel="View week view"
+            accessibilityRole="button"
+          >
             <MaterialIcons name="view-week" size={20} color={colors.primaryAccent} />
           </TouchableOpacity>
         </View>
@@ -165,6 +209,9 @@ const CalendarScreen = () => {
               style={[styles.filterButton, filter === 'all' && styles.filterButtonActive]}
               onPress={() => setFilter('all')}
               activeOpacity={0.7}
+              accessibilityLabel="Show all events"
+              accessibilityRole="button"
+              accessibilityState={{ selected: filter === 'all' }}
             >
               <Text style={[styles.filterButtonText, filter === 'all' && styles.filterButtonTextActive]}>
                 All
@@ -174,6 +221,9 @@ const CalendarScreen = () => {
               style={[styles.filterButton, filter === 'classes' && styles.filterButtonActive]}
               onPress={() => setFilter('classes')}
               activeOpacity={0.7}
+              accessibilityLabel="Show classes only"
+              accessibilityRole="button"
+              accessibilityState={{ selected: filter === 'classes' }}
             >
               <Text style={[styles.filterButtonText, filter === 'classes' && styles.filterButtonTextActive]}>
                 Classes
@@ -183,6 +233,9 @@ const CalendarScreen = () => {
               style={[styles.filterButton, filter === 'assignments' && styles.filterButtonActive]}
               onPress={() => setFilter('assignments')}
               activeOpacity={0.7}
+              accessibilityLabel="Show assignments only"
+              accessibilityRole="button"
+              accessibilityState={{ selected: filter === 'assignments' }}
             >
               <Text style={[styles.filterButtonText, filter === 'assignments' && styles.filterButtonTextActive]}>
                 Assignments
@@ -202,34 +255,15 @@ const CalendarScreen = () => {
                 <Text style={styles.emptyStateText}>No events on this day</Text>
               </GlassCard>
             ) : (
-              selectedDateEvents.map((item, index) => {
-                if (item.type === 'class') {
-                  return (
-                    <AgendaItem
-                      key={`class-${index}`}
-                      title={`${item.course.code}: ${item.course.name}`}
-                      timeRange={`${item.schedule.startTime} - ${item.schedule.endTime}`}
-                      location={item.course.location}
-                      color={item.course.color}
-                      icon="school"
-                    />
-                  );
-                } else {
-                  return (
-                    <AgendaItem
-                      key={`assignment-${index}`}
-                      title={item.assignment.title}
-                      subtitle={item.course.name}
-                      color={colors.warning}
-                      icon="assignment-late"
-                      badge={{
-                        text: getDueDateText(item.assignment.dueDate),
-                        color: colors.warning,
-                      }}
-                    />
-                  );
-                }
-              })
+              <FlatList
+                data={selectedDateEvents}
+                renderItem={renderAgendaItem}
+                keyExtractor={(item) => item.id}
+                scrollEnabled={false}
+                contentContainerStyle={{ gap: spacing.sm }}
+                removeClippedSubviews={true}
+                initialNumToRender={5}
+              />
             )}
           </View>
         </View>
@@ -285,13 +319,15 @@ const styles = StyleSheet.create({
   },
   filterButton: {
     flex: 1,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     borderRadius: 12,
     backgroundColor: 'rgba(255, 255, 255, 0.5)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.8)',
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
   },
   filterButtonActive: {
     backgroundColor: colors.charcoal,

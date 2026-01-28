@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, Alert, KeyboardAvoidingView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -11,7 +11,7 @@ import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { commonStyles, spacing } from '../theme/styles';
 import { SettingsStackParamList } from '../navigation/types';
-import { CourseSchedule } from '../types/course';
+import { CourseSchedule, TimeString, DayOfWeek } from '../types/course';
 import { getDayName } from '../utils/dateHelpers';
 
 type AddEditCourseScreenNavigationProp = StackNavigationProp<SettingsStackParamList, 'AddEditCourse'>;
@@ -79,7 +79,11 @@ const AddEditCourseScreen = () => {
   };
 
   const addScheduleSlot = () => {
-    setSchedule([...schedule, { day: 1, startTime: '09:00', endTime: '10:00' }]);
+    setSchedule([...schedule, { 
+      day: 1 as DayOfWeek, 
+      startTime: '09:00' as TimeString, 
+      endTime: '10:00' as TimeString 
+    }]);
   };
 
   const removeScheduleSlot = (index: number) => {
@@ -100,7 +104,7 @@ const AddEditCourseScreen = () => {
     if (selectedTime && showTimePicker) {
       const hours = selectedTime.getHours().toString().padStart(2, '0');
       const minutes = selectedTime.getMinutes().toString().padStart(2, '0');
-      const timeString = `${hours}:${minutes}`;
+      const timeString = `${hours}:${minutes}` as TimeString;
       
       const field = showTimePicker.type === 'start' ? 'startTime' : 'endTime';
       updateScheduleSlot(showTimePicker.index, field, timeString);
@@ -108,13 +112,26 @@ const AddEditCourseScreen = () => {
   };
 
   return (
-    <View style={commonStyles.container}>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={commonStyles.container}
+    >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
+        <TouchableOpacity 
+          onPress={() => navigation.goBack()} 
+          style={styles.headerButton}
+          accessibilityLabel="Cancel and go back"
+          accessibilityRole="button"
+        >
           <MaterialIcons name="close" size={24} color={colors.charcoal} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{isEditing ? 'Edit' : 'Add'} Course</Text>
-        <TouchableOpacity onPress={handleSave} style={styles.headerButton}>
+        <TouchableOpacity 
+          onPress={handleSave} 
+          style={styles.headerButton}
+          accessibilityLabel="Save course"
+          accessibilityRole="button"
+        >
           <MaterialIcons name="check" size={24} color={colors.primaryAccent} />
         </TouchableOpacity>
       </View>
@@ -133,6 +150,7 @@ const AddEditCourseScreen = () => {
             placeholderTextColor={colors.labelGray}
             value={code}
             onChangeText={setCode}
+            accessibilityLabel="Course code input"
           />
         </View>
 
@@ -144,6 +162,7 @@ const AddEditCourseScreen = () => {
             placeholderTextColor={colors.labelGray}
             value={name}
             onChangeText={setName}
+            accessibilityLabel="Course name input"
           />
         </View>
 
@@ -155,6 +174,7 @@ const AddEditCourseScreen = () => {
             placeholderTextColor={colors.labelGray}
             value={instructor}
             onChangeText={setInstructor}
+            accessibilityLabel="Instructor name input"
           />
         </View>
 
@@ -166,6 +186,7 @@ const AddEditCourseScreen = () => {
             placeholderTextColor={colors.labelGray}
             value={location}
             onChangeText={setLocation}
+            accessibilityLabel="Location input"
           />
         </View>
 
@@ -179,7 +200,12 @@ const AddEditCourseScreen = () => {
         <View style={styles.field}>
           <View style={styles.sectionHeader}>
             <Text style={styles.label}>Class Schedule</Text>
-            <TouchableOpacity onPress={addScheduleSlot} style={styles.addButton}>
+            <TouchableOpacity 
+              onPress={addScheduleSlot} 
+              style={styles.addButton}
+              accessibilityLabel="Add new class schedule slot"
+              accessibilityRole="button"
+            >
               <MaterialIcons name="add" size={20} color={colors.primaryAccent} />
               <Text style={styles.addButtonText}>Add Time Slot</Text>
             </TouchableOpacity>
@@ -200,6 +226,9 @@ const AddEditCourseScreen = () => {
                             slot.day === day && styles.dayButtonSelected,
                           ]}
                           onPress={() => updateScheduleSlot(index, 'day', day)}
+                          accessibilityLabel={`Select ${getDayName(day)}`}
+                          accessibilityRole="radio"
+                          accessibilityState={{ checked: slot.day === day }}
                         >
                           <Text
                             style={[
@@ -221,6 +250,8 @@ const AddEditCourseScreen = () => {
                     <TouchableOpacity
                       style={styles.timeButton}
                       onPress={() => setShowTimePicker({ type: 'start', index })}
+                      accessibilityLabel="Set start time"
+                      accessibilityRole="button"
                     >
                       <MaterialIcons name="access-time" size={16} color={colors.primaryAccent} />
                       <Text style={styles.timeButtonText}>{slot.startTime}</Text>
@@ -232,6 +263,8 @@ const AddEditCourseScreen = () => {
                     <TouchableOpacity
                       style={styles.timeButton}
                       onPress={() => setShowTimePicker({ type: 'end', index })}
+                      accessibilityLabel="Set end time"
+                      accessibilityRole="button"
                     >
                       <MaterialIcons name="access-time" size={16} color={colors.primaryAccent} />
                       <Text style={styles.timeButtonText}>{slot.endTime}</Text>
@@ -242,6 +275,8 @@ const AddEditCourseScreen = () => {
                 <TouchableOpacity
                   style={styles.removeButton}
                   onPress={() => removeScheduleSlot(index)}
+                  accessibilityLabel="Remove this schedule slot"
+                  accessibilityRole="button"
                 >
                   <MaterialIcons name="close" size={20} color={colors.error} />
                 </TouchableOpacity>
@@ -260,6 +295,8 @@ const AddEditCourseScreen = () => {
             style={styles.deleteButton}
             onPress={handleDelete}
             activeOpacity={0.7}
+            accessibilityLabel="Delete this course"
+            accessibilityRole="button"
           >
             <MaterialIcons name="delete-outline" size={20} color={colors.error} />
             <Text style={styles.deleteButtonText}>Delete Course</Text>
@@ -276,7 +313,7 @@ const AddEditCourseScreen = () => {
           onChange={handleTimeChange}
         />
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
