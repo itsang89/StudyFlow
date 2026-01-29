@@ -8,15 +8,19 @@ import { GlassCard } from '../components/GlassCard';
 import { AgendaItem } from '../components/AgendaItem';
 import { useCourses } from '../context/CourseContext';
 import { useAssignments } from '../context/AssignmentContext';
-import { colors } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
+import { ThemeColors } from '../theme/colors';
 import { typography } from '../theme/typography';
-import { commonStyles, spacing } from '../theme/styles';
+import { getCommonStyles, spacing } from '../theme/styles';
 import { CalendarStackParamList } from '../navigation/types';
 import { getDueDateText, isSameDay, formatDate } from '../utils/dateHelpers';
 
 type CalendarScreenNavigationProp = StackNavigationProp<CalendarStackParamList, 'Calendar'>;
 
 const CalendarScreen = () => {
+  const theme = useTheme();
+  const commonStyles = getCommonStyles(theme);
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const navigation = useNavigation<CalendarScreenNavigationProp>();
   const { courses } = useCourses();
   const { assignments } = useAssignments();
@@ -102,7 +106,7 @@ const CalendarScreen = () => {
       if (hasClasses || hasAssignments) {
         marked[dateString] = {
           marked: true,
-          dotColor: colors.primaryAccent,
+          dotColor: theme.primaryAccent,
         };
       }
     }
@@ -112,11 +116,12 @@ const CalendarScreen = () => {
     marked[selectedDateString] = {
       ...marked[selectedDateString],
       selected: true,
-      selectedColor: colors.charcoal,
+      selectedColor: theme.isDark ? theme.primaryAccent : theme.charcoal,
+      selectedTextColor: theme.isDark ? theme.charcoal : theme.white,
     };
 
     return marked;
-  }, [courses, assignments, selectedDate]);
+  }, [courses, assignments, selectedDate, theme]);
 
   const handleDayPress = useCallback((day: DateData) => {
     setSelectedDate(new Date(day.timestamp));
@@ -138,16 +143,16 @@ const CalendarScreen = () => {
         <AgendaItem
           title={item.assignment.title}
           subtitle={item.course.name}
-          color={colors.warning}
+          color={theme.warning}
           icon="assignment-late"
           badge={{
             text: getDueDateText(item.assignment.dueDate),
-            color: colors.warning,
+            color: theme.warning,
           }}
         />
       );
     }
-  }, []);
+  }, [theme]);
 
   return (
     <View style={commonStyles.container}>
@@ -165,7 +170,7 @@ const CalendarScreen = () => {
             accessibilityLabel="View week view"
             accessibilityRole="button"
           >
-            <MaterialIcons name="view-week" size={20} color={colors.primaryAccent} />
+            <MaterialIcons name="view-week" size={20} color={theme.primaryAccent} />
           </TouchableOpacity>
         </View>
 
@@ -178,16 +183,16 @@ const CalendarScreen = () => {
             theme={{
               backgroundColor: 'transparent',
               calendarBackground: 'transparent',
-              textSectionTitleColor: colors.labelGray,
-              selectedDayBackgroundColor: colors.charcoal,
-              selectedDayTextColor: colors.white,
-              todayTextColor: colors.primaryAccent,
-              dayTextColor: colors.charcoal,
-              textDisabledColor: colors.labelGray,
-              dotColor: colors.primaryAccent,
-              selectedDotColor: colors.white,
-              arrowColor: colors.charcoal,
-              monthTextColor: colors.charcoal,
+              textSectionTitleColor: theme.textSecondary,
+              selectedDayBackgroundColor: theme.isDark ? theme.primaryAccent : theme.charcoal,
+              selectedDayTextColor: theme.isDark ? theme.charcoal : theme.white,
+              todayTextColor: theme.primaryAccent,
+              dayTextColor: theme.textPrimary,
+              textDisabledColor: theme.textSecondary,
+              dotColor: theme.primaryAccent,
+              selectedDotColor: theme.isDark ? theme.charcoal : theme.white,
+              arrowColor: theme.textPrimary,
+              monthTextColor: theme.textPrimary,
               textDayFontFamily: 'System',
               textMonthFontFamily: 'System',
               textDayHeaderFontFamily: 'System',
@@ -251,7 +256,7 @@ const CalendarScreen = () => {
           <View style={styles.eventsList}>
             {selectedDateEvents.length === 0 ? (
               <GlassCard style={styles.emptyState}>
-                <MaterialIcons name="event-available" size={48} color={colors.labelGray} style={{ opacity: 0.3 }} />
+                <MaterialIcons name="event-available" size={48} color={theme.textSecondary} style={{ opacity: 0.3 }} />
                 <Text style={styles.emptyStateText}>No events on this day</Text>
               </GlassCard>
             ) : (
@@ -272,7 +277,7 @@ const CalendarScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   scrollView: {
     flex: 1,
   },
@@ -289,17 +294,17 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.h2,
-    color: colors.charcoal,
+    color: theme.textPrimary,
   },
   weekViewButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.5)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: colors.white,
+    borderColor: theme.isDark ? 'rgba(255, 255, 255, 0.1)' : theme.white,
   },
   calendarCard: {
     padding: spacing.md,
@@ -310,7 +315,7 @@ const styles = StyleSheet.create({
   },
   filterLabel: {
     ...typography.label,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: spacing.sm,
   },
   filterButtons: {
@@ -322,30 +327,30 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.5)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderColor: theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.8)',
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 44,
   },
   filterButtonActive: {
-    backgroundColor: colors.charcoal,
-    borderColor: colors.charcoal,
+    backgroundColor: theme.isDark ? theme.primaryAccent : theme.charcoal,
+    borderColor: theme.isDark ? theme.primaryAccent : theme.charcoal,
   },
   filterButtonText: {
     ...typography.bodyMedium,
-    color: colors.charcoal,
+    color: theme.textPrimary,
   },
   filterButtonTextActive: {
-    color: colors.white,
+    color: theme.isDark ? theme.charcoal : theme.white,
   },
   eventsSection: {
     marginBottom: spacing.xl,
   },
   eventsTitle: {
     ...typography.h4,
-    color: colors.charcoal,
+    color: theme.textPrimary,
     marginBottom: spacing.md,
   },
   eventsList: {
@@ -357,10 +362,9 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     ...typography.bodyMedium,
-    color: colors.labelGray,
+    color: theme.textSecondary,
     marginTop: spacing.md,
   },
 });
 
 export default CalendarScreen;
-

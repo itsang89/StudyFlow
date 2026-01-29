@@ -6,9 +6,10 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { GlassCard } from '../components/GlassCard';
 import { useAssignments } from '../context/AssignmentContext';
 import { useCourses } from '../context/CourseContext';
-import { colors, priorityColors } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
+import { ThemeColors, priorityColors as commonPriorityColors } from '../theme/colors';
 import { typography } from '../theme/typography';
-import { commonStyles, spacing } from '../theme/styles';
+import { getCommonStyles, spacing } from '../theme/styles';
 import { ToDoStackParamList } from '../navigation/types';
 import { getDueDateText } from '../utils/dateHelpers';
 import { Assignment } from '../types/assignment';
@@ -16,6 +17,9 @@ import { Assignment } from '../types/assignment';
 type AssignmentsScreenNavigationProp = StackNavigationProp<ToDoStackParamList, 'Assignments'>;
 
 const AssignmentsScreen = () => {
+  const theme = useTheme();
+  const commonStyles = getCommonStyles(theme);
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const navigation = useNavigation<AssignmentsScreenNavigationProp>();
   const { assignments, toggleComplete } = useAssignments();
   const { getCourseById } = useCourses();
@@ -72,9 +76,9 @@ const AssignmentsScreen = () => {
 
   const getPriorityColor = useCallback((priority: string) => {
     switch (priority) {
-      case 'high': return priorityColors.priorityHigh;
-      case 'medium': return priorityColors.priorityMedium;
-      default: return priorityColors.priorityLow;
+      case 'high': return commonPriorityColors.priorityHigh;
+      case 'medium': return commonPriorityColors.priorityMedium;
+      default: return commonPriorityColors.priorityLow;
     }
   }, []);
 
@@ -103,7 +107,7 @@ const AssignmentsScreen = () => {
               assignment.completed && styles.checkboxChecked
             ]}>
               {assignment.completed && (
-                <MaterialIcons name="check" size={16} color={colors.white} />
+                <MaterialIcons name="check" size={16} color={theme.white} />
               )}
             </View>
           </TouchableOpacity>
@@ -119,7 +123,7 @@ const AssignmentsScreen = () => {
               </Text>
             </View>
             <View style={styles.assignmentMeta}>
-              <Text style={[styles.courseCode, { color: course?.color || colors.primaryAccent }]}>
+              <Text style={[styles.courseCode, { color: course?.color || theme.primaryAccent }]}>
                 {course?.code || 'Unknown'}
               </Text>
               <Text style={styles.dueDate}>
@@ -130,14 +134,14 @@ const AssignmentsScreen = () => {
         </GlassCard>
       </TouchableOpacity>
     );
-  }, [getCourseById, getPriorityColor, navigation, toggleComplete]);
+  }, [getCourseById, getPriorityColor, navigation, toggleComplete, theme, styles]);
 
   const ListHeader = useMemo(() => (
     <View style={styles.header}>
       <View style={styles.headerTop}>
         <Text style={styles.title}>Assignments</Text>
         <TouchableOpacity style={styles.searchButton} accessibilityLabel="Search assignments" accessibilityRole="button">
-          <MaterialIcons name="search" size={20} color={colors.textSecondary} />
+          <MaterialIcons name="search" size={20} color={theme.textSecondary} />
         </TouchableOpacity>
       </View>
 
@@ -152,15 +156,15 @@ const AssignmentsScreen = () => {
         </View>
       </View>
     </View>
-  ), [completedCount, totalCount, completionPercentage]);
+  ), [completedCount, totalCount, completionPercentage, theme, styles]);
 
   const EmptyState = useMemo(() => (
     <GlassCard style={styles.emptyState}>
-      <MaterialIcons name="assignment-turned-in" size={64} color={colors.labelGray} style={{ opacity: 0.3 }} />
+      <MaterialIcons name="assignment-turned-in" size={64} color={theme.textSecondary} style={{ opacity: 0.3 }} />
       <Text style={styles.emptyStateText}>No assignments yet</Text>
       <Text style={styles.emptyStateSubtext}>Tap + to add your first assignment</Text>
     </GlassCard>
-  ), []);
+  ), [theme, styles]);
 
   return (
     <View style={commonStyles.container}>
@@ -187,13 +191,13 @@ const AssignmentsScreen = () => {
         accessibilityLabel="Add new assignment"
         accessibilityRole="button"
       >
-        <MaterialIcons name="add" size={28} color={colors.white} />
+        <MaterialIcons name="add" size={28} color={theme.white} />
       </TouchableOpacity>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   contentContainer: {
     paddingTop: spacing.xl + 16,
     paddingHorizontal: spacing.lg,
@@ -210,17 +214,17 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.h2,
-    color: colors.charcoal,
+    color: theme.textPrimary,
   },
   searchButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.5)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: colors.white,
+    borderColor: theme.isDark ? 'rgba(255, 255, 255, 0.1)' : theme.white,
   },
   progressSection: {
     marginTop: spacing.md,
@@ -233,26 +237,26 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     ...typography.label,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   progressCount: {
     ...typography.smallMedium,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     fontSize: 12,
   },
   progressBar: {
     height: 1.5,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
     borderRadius: 1,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: colors.accentBlue,
+    backgroundColor: theme.primaryAccent,
   },
   sectionTitle: {
     ...typography.label,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: spacing.md,
     marginTop: spacing.lg,
     paddingHorizontal: spacing.xs,
@@ -279,14 +283,14 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     borderWidth: 1,
-    borderColor: colors.labelGray,
+    borderColor: theme.textSecondary,
     alignItems: 'center',
     justifyContent: 'center',
     opacity: 0.5,
   },
   checkboxChecked: {
-    backgroundColor: colors.accentBlue,
-    borderColor: colors.accentBlue,
+    backgroundColor: theme.primaryAccent,
+    borderColor: theme.primaryAccent,
     opacity: 1,
   },
   assignmentContent: {
@@ -305,7 +309,7 @@ const styles = StyleSheet.create({
   },
   assignmentTitle: {
     ...typography.bodyMedium,
-    color: colors.charcoal,
+    color: theme.textPrimary,
     fontSize: 15,
     flex: 1,
   },
@@ -323,7 +327,7 @@ const styles = StyleSheet.create({
   },
   dueDate: {
     ...typography.tiny,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     fontSize: 11,
   },
   emptyState: {
@@ -333,12 +337,12 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     ...typography.bodySemibold,
-    color: colors.labelGray,
+    color: theme.textSecondary,
     marginTop: spacing.md,
   },
   emptyStateSubtext: {
     ...typography.small,
-    color: colors.labelGray,
+    color: theme.textSecondary,
     opacity: 0.7,
     marginTop: spacing.xs,
   },
@@ -349,10 +353,10 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.charcoal,
+    backgroundColor: theme.isDark ? theme.primaryAccent : theme.charcoal,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.black,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -361,4 +365,3 @@ const styles = StyleSheet.create({
 });
 
 export default AssignmentsScreen;
-

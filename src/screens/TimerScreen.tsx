@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, AppState, AppStateStatus, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -6,9 +6,10 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { GlassCard } from '../components/GlassCard';
 import { useCourses } from '../context/CourseContext';
 import { useStudySessions } from '../context/StudySessionContext';
-import { colors } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
+import { ThemeColors } from '../theme/colors';
 import { typography } from '../theme/typography';
-import { commonStyles, spacing } from '../theme/styles';
+import { getCommonStyles, spacing } from '../theme/styles';
 import { HomeStackParamList } from '../navigation/types';
 import { formatTimerDisplay, formatDuration } from '../utils/timeHelpers';
 
@@ -16,6 +17,9 @@ type TimerScreenNavigationProp = StackNavigationProp<HomeStackParamList, 'Timer'
 type TimerScreenRouteProp = RouteProp<HomeStackParamList, 'Timer'>;
 
 const TimerScreen = () => {
+  const theme = useTheme();
+  const commonStyles = getCommonStyles(theme);
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const navigation = useNavigation<TimerScreenNavigationProp>();
   const route = useRoute<TimerScreenRouteProp>();
   const { courseId } = route.params;
@@ -154,7 +158,7 @@ const TimerScreen = () => {
             <MaterialIcons 
               name={isRunning ? 'pause' : 'play-arrow'} 
               size={24} 
-              color={colors.charcoal} 
+              color={theme.textPrimary} 
             />
             <Text style={styles.controlButtonTextSecondary}>
               {isRunning ? 'Pause' : 'Resume'}
@@ -168,7 +172,7 @@ const TimerScreen = () => {
             accessibilityLabel="Stop and end study session"
             accessibilityRole="button"
           >
-            <MaterialIcons name="stop" size={24} color={colors.charcoal} />
+            <MaterialIcons name="stop" size={24} color={theme.textPrimary} />
             <Text style={styles.controlButtonTextSecondary}>End</Text>
           </TouchableOpacity>
         </View>
@@ -201,7 +205,7 @@ const TimerScreen = () => {
           <GlassCard style={styles.modalContent}>
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={styles.modalHeader}>
-                <MaterialIcons name="check-circle" size={64} color={colors.success} />
+                <MaterialIcons name="check-circle" size={64} color={theme.success} />
                 <Text style={styles.modalTitle}>Session Complete!</Text>
                 <Text style={styles.modalSubtitle}>Great work today</Text>
               </View>
@@ -223,7 +227,7 @@ const TimerScreen = () => {
                 <TextInput
                   style={styles.notesInput}
                   placeholder="Add any notes about this study session..."
-                  placeholderTextColor={colors.labelGray}
+                  placeholderTextColor={theme.textSecondary}
                   multiline
                   numberOfLines={4}
                   value={notes}
@@ -261,10 +265,10 @@ const TimerScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bgAlt,
+    backgroundColor: theme.bgAlt,
   },
   bgCircle1: {
     position: 'absolute',
@@ -272,8 +276,8 @@ const styles = StyleSheet.create({
     right: -80,
     width: 320,
     height: 320,
-    backgroundColor: colors.white,
-    opacity: 0.6,
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : theme.white,
+    opacity: theme.isDark ? 1 : 0.6,
     borderRadius: 160,
   },
   bgCircle2: {
@@ -282,7 +286,7 @@ const styles = StyleSheet.create({
     left: -80,
     width: 256,
     height: 256,
-    backgroundColor: colors.primaryAccent,
+    backgroundColor: theme.primaryAccent,
     opacity: 0.05,
     borderRadius: 128,
   },
@@ -293,7 +297,7 @@ const styles = StyleSheet.create({
   },
   courseCode: {
     ...typography.labelSmall,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: spacing.xs,
   },
   statusBadge: {
@@ -305,16 +309,16 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.labelGray,
+    backgroundColor: theme.textSecondary,
     opacity: 0.4,
   },
   statusDotActive: {
-    backgroundColor: colors.primaryAccent,
+    backgroundColor: theme.primaryAccent,
     opacity: 0.8,
   },
   statusText: {
     ...typography.smallMedium,
-    color: colors.labelGray,
+    color: theme.textSecondary,
     fontSize: 13,
   },
   timerContainer: {
@@ -337,12 +341,12 @@ const styles = StyleSheet.create({
   timerText: {
     fontSize: 64,
     fontWeight: '300',
-    color: colors.charcoal,
+    color: theme.textPrimary,
     letterSpacing: -2,
   },
   timerLabel: {
     ...typography.label,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: spacing.sm,
   },
   controls: {
@@ -365,13 +369,13 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   controlButtonSecondary: {
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.5)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderColor: theme.glassBorder,
   },
   controlButtonTextSecondary: {
     ...typography.bodyMedium,
-    color: colors.charcoal,
+    color: theme.textPrimary,
   },
   stats: {
     flexDirection: 'row',
@@ -384,18 +388,18 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     ...typography.labelSmall,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: spacing.xs,
   },
   statValue: {
     ...typography.bodySemibold,
-    color: colors.charcoal,
+    color: theme.textPrimary,
     fontSize: 18,
   },
   statDivider: {
     width: 1,
     height: 32,
-    backgroundColor: colors.labelGray,
+    backgroundColor: theme.textSecondary,
     opacity: 0.2,
   },
   modalOverlay: {
@@ -416,20 +420,20 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     ...typography.h2,
-    color: colors.charcoal,
+    color: theme.textPrimary,
     marginTop: spacing.md,
     marginBottom: spacing.xs,
   },
   modalSubtitle: {
     ...typography.body,
-    color: colors.labelGray,
+    color: theme.textSecondary,
   },
   modalStats: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingVertical: spacing.lg,
     marginBottom: spacing.lg,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.3)',
     borderRadius: 16,
   },
   modalStatItem: {
@@ -437,16 +441,16 @@ const styles = StyleSheet.create({
   },
   modalStatLabel: {
     ...typography.label,
-    color: colors.labelGray,
+    color: theme.textSecondary,
     marginBottom: spacing.xs,
   },
   modalStatValue: {
     ...typography.h4,
-    color: colors.charcoal,
+    color: theme.textPrimary,
   },
   modalStatDivider: {
     width: 1,
-    backgroundColor: colors.labelGray,
+    backgroundColor: theme.textSecondary,
     opacity: 0.2,
   },
   notesSection: {
@@ -454,18 +458,18 @@ const styles = StyleSheet.create({
   },
   notesLabel: {
     ...typography.bodyMedium,
-    color: colors.charcoal,
+    color: theme.textPrimary,
     marginBottom: spacing.sm,
   },
   notesInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.5)',
     borderRadius: 12,
     padding: spacing.md,
     ...typography.body,
-    color: colors.charcoal,
+    color: theme.textPrimary,
     minHeight: 100,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderColor: theme.glassBorder,
   },
   modalButtons: {
     flexDirection: 'row',
@@ -479,37 +483,36 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   modalButtonPrimary: {
-    backgroundColor: colors.charcoal,
+    backgroundColor: theme.isDark ? theme.primaryAccent : theme.charcoal,
   },
   modalButtonSecondary: {
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.5)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderColor: theme.glassBorder,
   },
   modalButtonText: {
     ...typography.bodySemibold,
-    color: colors.white,
+    color: theme.isDark ? theme.charcoal : theme.white,
   },
   modalButtonTextSecondary: {
     ...typography.bodySemibold,
-    color: colors.charcoal,
+    color: theme.textPrimary,
   },
   errorText: {
     ...typography.h4,
-    color: colors.error,
+    color: theme.error,
     marginBottom: spacing.lg,
   },
   backButton: {
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
-    backgroundColor: colors.charcoal,
+    backgroundColor: theme.isDark ? theme.primaryAccent : theme.charcoal,
     borderRadius: 12,
   },
   backButtonText: {
     ...typography.bodySemibold,
-    color: colors.white,
+    color: theme.isDark ? theme.charcoal : theme.white,
   },
 });
 
 export default TimerScreen;
-

@@ -1,19 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Switch, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { GlassCard } from '../components/GlassCard';
 import { useSettings } from '../context/SettingsContext';
+import { useTheme } from '../context/ThemeContext';
 import { storage } from '../utils/storage';
-import { colors } from '../theme/colors';
+import { ThemeColors } from '../theme/colors';
 import { typography } from '../theme/typography';
-import { commonStyles, spacing } from '../theme/styles';
+import { getCommonStyles, spacing } from '../theme/styles';
 import { SettingsStackParamList } from '../navigation/types';
 
 type SettingsScreenNavigationProp = StackNavigationProp<SettingsStackParamList, 'Settings'>;
 
 const SettingsScreen = () => {
+  const theme = useTheme();
+  const commonStyles = getCommonStyles(theme);
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const navigation = useNavigation<SettingsScreenNavigationProp>();
   const { settings, updateUserName, toggleTheme, toggleNotification } = useSettings();
   const [isEditingName, setIsEditingName] = useState(false);
@@ -59,7 +63,7 @@ const SettingsScreen = () => {
           <Text style={styles.sectionTitle}>PROFILE</Text>
           <GlassCard style={styles.card}>
             <View style={styles.profileSection}>
-              <MaterialIcons name="person" size={24} color={colors.primaryAccent} />
+              <MaterialIcons name="person" size={24} color={theme.primaryAccent} />
               {isEditingName ? (
                 <View style={styles.nameEditContainer}>
                   <TextInput
@@ -67,11 +71,11 @@ const SettingsScreen = () => {
                     value={tempName}
                     onChangeText={setTempName}
                     placeholder="Enter your name"
-                    placeholderTextColor={colors.labelGray}
+                    placeholderTextColor={theme.textSecondary}
                     autoFocus
                   />
                   <TouchableOpacity onPress={handleSaveName} style={styles.saveButton}>
-                    <MaterialIcons name="check" size={20} color={colors.success} />
+                    <MaterialIcons name="check" size={20} color={theme.success} />
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -85,7 +89,7 @@ const SettingsScreen = () => {
                   <Text style={styles.userName}>
                     {settings.userName || 'Set your name'}
                   </Text>
-                  <MaterialIcons name="edit" size={18} color={colors.labelGray} />
+                  <MaterialIcons name="edit" size={18} color={theme.textSecondary} />
                 </TouchableOpacity>
               )}
             </View>
@@ -98,7 +102,7 @@ const SettingsScreen = () => {
           <GlassCard style={styles.card}>
             <View style={styles.settingItem}>
               <View style={styles.settingInfo}>
-                <MaterialIcons name="brightness-6" size={24} color={colors.labelGray} />
+                <MaterialIcons name="brightness-6" size={24} color={theme.textSecondary} />
                 <View style={styles.settingText}>
                   <Text style={styles.settingLabel}>Theme</Text>
                   <Text style={styles.settingValue}>
@@ -109,8 +113,8 @@ const SettingsScreen = () => {
               <Switch
                 value={settings.theme === 'dark'}
                 onValueChange={toggleTheme}
-                trackColor={{ false: colors.labelGray, true: colors.primaryAccent }}
-                thumbColor={colors.white}
+                trackColor={{ false: theme.textSecondary, true: theme.primaryAccent }}
+                thumbColor={theme.white}
                 accessibilityLabel="Toggle dark mode"
                 accessibilityRole="switch"
               />
@@ -124,7 +128,7 @@ const SettingsScreen = () => {
           <GlassCard style={styles.card}>
             <View style={styles.settingItem}>
               <View style={styles.settingInfo}>
-                <MaterialIcons name="notifications" size={24} color={colors.labelGray} />
+                <MaterialIcons name="notifications" size={24} color={theme.textSecondary} />
                 <View style={styles.settingText}>
                   <Text style={styles.settingLabel}>Class Reminders</Text>
                   <Text style={styles.settingDescription}>1 hour before class</Text>
@@ -133,8 +137,8 @@ const SettingsScreen = () => {
               <Switch
                 value={settings.notificationPreferences.classReminders}
                 onValueChange={() => toggleNotification('classReminders')}
-                trackColor={{ false: colors.labelGray, true: colors.primaryAccent }}
-                thumbColor={colors.white}
+                trackColor={{ false: theme.textSecondary, true: theme.primaryAccent }}
+                thumbColor={theme.white}
                 accessibilityLabel="Toggle class reminders"
                 accessibilityRole="switch"
               />
@@ -142,7 +146,7 @@ const SettingsScreen = () => {
             <View style={styles.divider} />
             <View style={styles.settingItem}>
               <View style={styles.settingInfo}>
-                <MaterialIcons name="assignment-late" size={24} color={colors.labelGray} />
+                <MaterialIcons name="assignment-late" size={24} color={theme.textSecondary} />
                 <View style={styles.settingText}>
                   <Text style={styles.settingLabel}>Assignment Alerts</Text>
                   <Text style={styles.settingDescription}>24 hours before due</Text>
@@ -151,8 +155,8 @@ const SettingsScreen = () => {
               <Switch
                 value={settings.notificationPreferences.assignmentAlerts}
                 onValueChange={() => toggleNotification('assignmentAlerts')}
-                trackColor={{ false: colors.labelGray, true: colors.primaryAccent }}
-                thumbColor={colors.white}
+                trackColor={{ false: theme.textSecondary, true: theme.primaryAccent }}
+                thumbColor={theme.white}
                 accessibilityLabel="Toggle assignment alerts"
                 accessibilityRole="switch"
               />
@@ -172,10 +176,10 @@ const SettingsScreen = () => {
             <GlassCard style={styles.card}>
               <View style={styles.settingItem}>
                 <View style={styles.settingInfo}>
-                  <MaterialIcons name="school" size={24} color={colors.labelGray} />
+                  <MaterialIcons name="school" size={24} color={theme.textSecondary} />
                   <Text style={styles.settingLabel}>My Courses</Text>
                 </View>
-                <MaterialIcons name="chevron-right" size={24} color={colors.labelGray} />
+                <MaterialIcons name="chevron-right" size={24} color={theme.textSecondary} />
               </View>
             </GlassCard>
           </TouchableOpacity>
@@ -193,10 +197,10 @@ const SettingsScreen = () => {
             <GlassCard style={styles.card}>
               <View style={styles.settingItem}>
                 <View style={styles.settingInfo}>
-                  <MaterialIcons name="delete-sweep" size={24} color={colors.error} />
-                  <Text style={[styles.settingLabel, { color: colors.error }]}>Clear All Data</Text>
+                  <MaterialIcons name="delete-sweep" size={24} color={theme.error} />
+                  <Text style={[styles.settingLabel, { color: theme.error }]}>Clear All Data</Text>
                 </View>
-                <MaterialIcons name="chevron-right" size={24} color={colors.error} />
+                <MaterialIcons name="chevron-right" size={24} color={theme.error} />
               </View>
             </GlassCard>
           </TouchableOpacity>
@@ -222,7 +226,7 @@ const SettingsScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   scrollView: {
     flex: 1,
   },
@@ -236,14 +240,14 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.h2,
-    color: colors.charcoal,
+    color: theme.textPrimary,
   },
   section: {
     marginBottom: spacing.xl,
   },
   sectionTitle: {
     ...typography.label,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: spacing.sm,
     paddingHorizontal: spacing.xs,
   },
@@ -263,7 +267,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     ...typography.bodySemibold,
-    color: colors.charcoal,
+    color: theme.textPrimary,
     fontSize: 17,
   },
   nameEditContainer: {
@@ -275,12 +279,12 @@ const styles = StyleSheet.create({
   nameInput: {
     flex: 1,
     ...typography.body,
-    color: colors.charcoal,
+    color: theme.textPrimary,
     padding: spacing.sm,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.5)',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderColor: theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.8)',
   },
   saveButton: {
     width: 44,
@@ -306,21 +310,21 @@ const styles = StyleSheet.create({
   },
   settingLabel: {
     ...typography.bodyMedium,
-    color: colors.charcoal,
+    color: theme.textPrimary,
     marginBottom: 2,
   },
   settingValue: {
     ...typography.small,
-    color: colors.labelGray,
+    color: theme.textSecondary,
   },
   settingDescription: {
     ...typography.small,
-    color: colors.labelGray,
+    color: theme.textSecondary,
     fontSize: 12,
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
     marginVertical: spacing.sm,
   },
   infoItem: {
@@ -331,13 +335,12 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     ...typography.body,
-    color: colors.labelGray,
+    color: theme.textSecondary,
   },
   infoValue: {
     ...typography.bodyMedium,
-    color: colors.charcoal,
+    color: theme.textPrimary,
   },
 });
 
 export default SettingsScreen;
-

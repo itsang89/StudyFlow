@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
-import { View, ViewStyle, StyleSheet, StyleProp } from 'react-native';
-import { glassStyles } from '../theme/styles';
+import { View, ViewStyle, StyleProp } from 'react-native';
+import { getGlassStyles } from '../theme/styles';
+import { useTheme } from '../context/ThemeContext';
 
 interface GlassCardProps {
   children: React.ReactNode;
@@ -8,21 +9,23 @@ interface GlassCardProps {
   variant?: 'default' | 'light' | 'strong';
 }
 
-const variantStyles = {
-  light: glassStyles.cardLight,
-  strong: glassStyles.cardStrong,
-  default: glassStyles.card,
-} as const;
-
 export const GlassCard: React.FC<GlassCardProps> = memo(({ 
   children, 
   style, 
   variant = 'default' 
 }) => {
+  const theme = useTheme();
+  const glassStyles = getGlassStyles(theme);
+
+  const variantStyles = {
+    light: glassStyles.cardLight,
+    strong: glassStyles.cardStrong,
+    default: glassStyles.card,
+  } as const;
+
   return (
     <View style={[variantStyles[variant], style]}>
       {children}
     </View>
   );
 });
-

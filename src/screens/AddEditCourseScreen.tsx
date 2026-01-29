@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, Alert, KeyboardAvoidingView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -7,9 +7,10 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { GlassCard } from '../components/GlassCard';
 import { CourseColorPicker } from '../components/CourseColorPicker';
 import { useCourses } from '../context/CourseContext';
-import { colors } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
+import { ThemeColors } from '../theme/colors';
 import { typography } from '../theme/typography';
-import { commonStyles, spacing } from '../theme/styles';
+import { getCommonStyles, spacing } from '../theme/styles';
 import { SettingsStackParamList } from '../navigation/types';
 import { CourseSchedule, TimeString, DayOfWeek } from '../types/course';
 import { getDayName } from '../utils/dateHelpers';
@@ -18,6 +19,9 @@ type AddEditCourseScreenNavigationProp = StackNavigationProp<SettingsStackParamL
 type AddEditCourseScreenRouteProp = RouteProp<SettingsStackParamList, 'AddEditCourse'>;
 
 const AddEditCourseScreen = () => {
+  const theme = useTheme();
+  const commonStyles = getCommonStyles(theme);
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const navigation = useNavigation<AddEditCourseScreenNavigationProp>();
   const route = useRoute<AddEditCourseScreenRouteProp>();
   const { courseId } = route.params;
@@ -123,7 +127,7 @@ const AddEditCourseScreen = () => {
           accessibilityLabel="Cancel and go back"
           accessibilityRole="button"
         >
-          <MaterialIcons name="close" size={24} color={colors.charcoal} />
+          <MaterialIcons name="close" size={24} color={theme.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{isEditing ? 'Edit' : 'Add'} Course</Text>
         <TouchableOpacity 
@@ -132,7 +136,7 @@ const AddEditCourseScreen = () => {
           accessibilityLabel="Save course"
           accessibilityRole="button"
         >
-          <MaterialIcons name="check" size={24} color={colors.primaryAccent} />
+          <MaterialIcons name="check" size={24} color={theme.primaryAccent} />
         </TouchableOpacity>
       </View>
 
@@ -147,7 +151,7 @@ const AddEditCourseScreen = () => {
           <TextInput
             style={styles.input}
             placeholder="e.g., CS101"
-            placeholderTextColor={colors.labelGray}
+            placeholderTextColor={theme.textSecondary}
             value={code}
             onChangeText={setCode}
             accessibilityLabel="Course code input"
@@ -159,7 +163,7 @@ const AddEditCourseScreen = () => {
           <TextInput
             style={styles.input}
             placeholder="e.g., Introduction to Computer Science"
-            placeholderTextColor={colors.labelGray}
+            placeholderTextColor={theme.textSecondary}
             value={name}
             onChangeText={setName}
             accessibilityLabel="Course name input"
@@ -171,7 +175,7 @@ const AddEditCourseScreen = () => {
           <TextInput
             style={styles.input}
             placeholder="Professor name"
-            placeholderTextColor={colors.labelGray}
+            placeholderTextColor={theme.textSecondary}
             value={instructor}
             onChangeText={setInstructor}
             accessibilityLabel="Instructor name input"
@@ -183,7 +187,7 @@ const AddEditCourseScreen = () => {
           <TextInput
             style={styles.input}
             placeholder="e.g., Room 302"
-            placeholderTextColor={colors.labelGray}
+            placeholderTextColor={theme.textSecondary}
             value={location}
             onChangeText={setLocation}
             accessibilityLabel="Location input"
@@ -206,7 +210,7 @@ const AddEditCourseScreen = () => {
               accessibilityLabel="Add new class schedule slot"
               accessibilityRole="button"
             >
-              <MaterialIcons name="add" size={20} color={colors.primaryAccent} />
+              <MaterialIcons name="add" size={20} color={theme.primaryAccent} />
               <Text style={styles.addButtonText}>Add Time Slot</Text>
             </TouchableOpacity>
           </View>
@@ -253,7 +257,7 @@ const AddEditCourseScreen = () => {
                       accessibilityLabel="Set start time"
                       accessibilityRole="button"
                     >
-                      <MaterialIcons name="access-time" size={16} color={colors.primaryAccent} />
+                      <MaterialIcons name="access-time" size={16} color={theme.primaryAccent} />
                       <Text style={styles.timeButtonText}>{slot.startTime}</Text>
                     </TouchableOpacity>
                   </View>
@@ -266,7 +270,7 @@ const AddEditCourseScreen = () => {
                       accessibilityLabel="Set end time"
                       accessibilityRole="button"
                     >
-                      <MaterialIcons name="access-time" size={16} color={colors.primaryAccent} />
+                      <MaterialIcons name="access-time" size={16} color={theme.primaryAccent} />
                       <Text style={styles.timeButtonText}>{slot.endTime}</Text>
                     </TouchableOpacity>
                   </View>
@@ -278,7 +282,7 @@ const AddEditCourseScreen = () => {
                   accessibilityLabel="Remove this schedule slot"
                   accessibilityRole="button"
                 >
-                  <MaterialIcons name="close" size={20} color={colors.error} />
+                  <MaterialIcons name="close" size={20} color={theme.error} />
                 </TouchableOpacity>
               </View>
             </GlassCard>
@@ -298,7 +302,7 @@ const AddEditCourseScreen = () => {
             accessibilityLabel="Delete this course"
             accessibilityRole="button"
           >
-            <MaterialIcons name="delete-outline" size={20} color={colors.error} />
+            <MaterialIcons name="delete-outline" size={20} color={theme.error} />
             <Text style={styles.deleteButtonText}>Delete Course</Text>
           </TouchableOpacity>
         )}
@@ -317,7 +321,7 @@ const AddEditCourseScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -325,7 +329,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl + 16,
     paddingBottom: spacing.md,
-    backgroundColor: colors.bgMain,
+    backgroundColor: theme.bgMain,
   },
   headerButton: {
     width: 40,
@@ -335,7 +339,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...typography.h4,
-    color: colors.charcoal,
+    color: theme.textPrimary,
   },
   scrollView: {
     flex: 1,
@@ -349,17 +353,17 @@ const styles = StyleSheet.create({
   },
   label: {
     ...typography.bodyMedium,
-    color: colors.charcoal,
+    color: theme.textPrimary,
     marginBottom: spacing.sm,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.5)',
     borderRadius: 12,
     padding: spacing.md,
     ...typography.body,
-    color: colors.charcoal,
+    color: theme.textPrimary,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderColor: theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.8)',
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -374,7 +378,7 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     ...typography.bodyMedium,
-    color: colors.primaryAccent,
+    color: theme.primaryAccent,
   },
   scheduleCard: {
     padding: spacing.md,
@@ -388,7 +392,7 @@ const styles = StyleSheet.create({
   },
   scheduleLabel: {
     ...typography.smallMedium,
-    color: colors.labelGray,
+    color: theme.textSecondary,
     marginBottom: spacing.xs,
   },
   dayButtons: {
@@ -399,22 +403,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.5)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderColor: theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.8)',
     minWidth: 48,
     alignItems: 'center',
   },
   dayButtonSelected: {
-    backgroundColor: colors.charcoal,
-    borderColor: colors.charcoal,
+    backgroundColor: theme.isDark ? theme.primaryAccent : theme.charcoal,
+    borderColor: theme.isDark ? theme.primaryAccent : theme.charcoal,
   },
   dayButtonText: {
     ...typography.smallMedium,
-    color: colors.charcoal,
+    color: theme.textPrimary,
   },
   dayButtonTextSelected: {
-    color: colors.white,
+    color: theme.isDark ? theme.charcoal : theme.white,
   },
   timeRow: {
     flexDirection: 'row',
@@ -427,15 +431,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.5)',
     borderRadius: 8,
     padding: spacing.sm,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderColor: theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.8)',
   },
   timeButtonText: {
     ...typography.bodyMedium,
-    color: colors.charcoal,
+    color: theme.textPrimary,
   },
   removeButton: {
     position: 'absolute',
@@ -444,7 +448,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.white,
+    backgroundColor: theme.isDark ? theme.bgAlt : theme.white,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -455,7 +459,7 @@ const styles = StyleSheet.create({
   },
   emptyScheduleText: {
     ...typography.body,
-    color: colors.labelGray,
+    color: theme.textSecondary,
     textAlign: 'center',
     paddingVertical: spacing.lg,
   },
@@ -469,9 +473,8 @@ const styles = StyleSheet.create({
   },
   deleteButtonText: {
     ...typography.bodyMedium,
-    color: colors.error,
+    color: theme.error,
   },
 });
 
 export default AddEditCourseScreen;
-

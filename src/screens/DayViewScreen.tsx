@@ -1,10 +1,15 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
+import { ThemeColors } from '../theme/colors';
 import { typography } from '../theme/typography';
-import { commonStyles, spacing } from '../theme/styles';
+import { getCommonStyles, spacing } from '../theme/styles';
 
 const DayViewScreen = () => {
+  const theme = useTheme();
+  const commonStyles = getCommonStyles(theme);
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   return (
     <View style={[commonStyles.container, commonStyles.centerContent]}>
       <Text style={styles.text}>Day View Screen</Text>
@@ -13,17 +18,16 @@ const DayViewScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   text: {
     ...typography.h3,
-    color: colors.charcoal,
+    color: theme.textPrimary,
   },
   subtext: {
     ...typography.body,
-    color: colors.labelGray,
+    color: theme.textSecondary,
     marginTop: spacing.sm,
   },
 });
 
 export default DayViewScreen;
-

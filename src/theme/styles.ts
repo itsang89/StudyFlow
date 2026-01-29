@@ -1,5 +1,5 @@
 import { StyleSheet, ViewStyle } from 'react-native';
-import { colors, opacity } from './colors';
+import { ThemeColors } from './colors';
 
 export const borderRadius = {
   sm: 8,
@@ -10,34 +10,34 @@ export const borderRadius = {
   full: 9999,
 };
 
-export const glassStyles = StyleSheet.create({
+export const getGlassStyles = (theme: ThemeColors) => StyleSheet.create({
   card: {
-    backgroundColor: opacity.glass,
+    backgroundColor: theme.glassBackground,
     borderRadius: borderRadius.xxl,
     borderWidth: 1,
-    borderColor: opacity.glassBorder,
-    shadowColor: 'rgba(31, 38, 135, 0.03)',
+    borderColor: theme.glassBorder,
+    shadowColor: theme.isDark ? 'rgba(0, 0, 0, 0.3)' : 'rgba(31, 38, 135, 0.03)',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 1,
     shadowRadius: 32,
     elevation: 3,
   },
   cardLight: {
-    backgroundColor: opacity.glassLight,
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.2)',
     borderRadius: borderRadius.xxl,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
-    shadowColor: 'rgba(31, 38, 135, 0.03)',
+    borderColor: theme.glassBorder,
+    shadowColor: theme.isDark ? 'rgba(0, 0, 0, 0.3)' : 'rgba(31, 38, 135, 0.03)',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 1,
     shadowRadius: 32,
     elevation: 3,
   },
   cardStrong: {
-    backgroundColor: opacity.glassStrong,
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.6)',
     borderRadius: borderRadius.xl,
     borderWidth: 1,
-    borderColor: opacity.glassStrong,
+    borderColor: theme.glassBorder,
     shadowColor: 'rgba(0, 0, 0, 0.05)',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
@@ -45,16 +45,16 @@ export const glassStyles = StyleSheet.create({
     elevation: 2,
   },
   nav: {
-    backgroundColor: opacity.glassNav,
+    backgroundColor: theme.isDark ? 'rgba(15, 20, 25, 0.8)' : 'rgba(255, 255, 255, 0.7)',
     borderTopWidth: 1,
-    borderTopColor: opacity.glassNavBorder,
+    borderTopColor: theme.glassBorder,
   },
 });
 
-export const commonStyles = StyleSheet.create({
+export const getCommonStyles = (theme: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bgMain,
+    backgroundColor: theme.bgMain,
   },
   centerContent: {
     flex: 1,
@@ -64,14 +64,14 @@ export const commonStyles = StyleSheet.create({
   shadow: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: theme.isDark ? 0.3 : 0.1,
     shadowRadius: 8,
     elevation: 3,
   },
   shadowLarge: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
+    shadowOpacity: theme.isDark ? 0.4 : 0.15,
     shadowRadius: 16,
     elevation: 8,
   },
@@ -85,4 +85,3 @@ export const spacing = {
   xl: 32,
   xxl: 48,
 };
-

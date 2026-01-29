@@ -4,9 +4,20 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { AppProvider } from './src/context/AppProvider';
 import { BottomTabNavigator } from './src/navigation/BottomTabNavigator';
+import { useThemeStatus } from './src/context/ThemeContext';
 import * as Font from 'expo-font';
 import { MaterialIcons } from '@expo/vector-icons';
 import { View, ActivityIndicator } from 'react-native';
+
+const AppContent = () => {
+  const { isDark } = useThemeStatus();
+  return (
+    <NavigationContainer>
+      <BottomTabNavigator />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+    </NavigationContainer>
+  );
+};
 
 export default function App() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
@@ -38,12 +49,8 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AppProvider>
-        <NavigationContainer>
-          <BottomTabNavigator />
-          <StatusBar style="dark" />
-        </NavigationContainer>
+        <AppContent />
       </AppProvider>
     </SafeAreaProvider>
   );
 }
-

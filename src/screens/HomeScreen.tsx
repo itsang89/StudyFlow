@@ -7,15 +7,19 @@ import { GlassCard } from '../components/GlassCard';
 import { AgendaItem } from '../components/AgendaItem';
 import { useCourses } from '../context/CourseContext';
 import { useAssignments } from '../context/AssignmentContext';
-import { colors } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
+import { ThemeColors } from '../theme/colors';
 import { typography } from '../theme/typography';
-import { commonStyles, spacing } from '../theme/styles';
+import { getCommonStyles, spacing } from '../theme/styles';
 import { HomeStackParamList } from '../navigation/types';
 import { getDueDateText, isSameDay } from '../utils/dateHelpers';
 
 type HomeScreenNavigationProp = StackNavigationProp<HomeStackParamList, 'Home'>;
 
 const HomeScreen = () => {
+  const theme = useTheme();
+  const commonStyles = getCommonStyles(theme);
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { courses } = useCourses();
   const { assignments } = useAssignments();
@@ -89,16 +93,16 @@ const HomeScreen = () => {
         <AgendaItem
           title={item.assignment.title}
           subtitle={item.course.name}
-          color={colors.warning}
+          color={theme.warning}
           icon="assignment-late"
           badge={{
             text: getDueDateText(item.assignment.dueDate),
-            color: colors.warning,
+            color: theme.warning,
           }}
         />
       );
     }
-  }, []);
+  }, [theme]);
 
   const selectedCourse = courses.find((c) => c.id === selectedCourseId);
 
@@ -134,7 +138,7 @@ const HomeScreen = () => {
             >
               <View style={styles.courseSelectorContent}>
                 <View style={styles.courseSelectorIcon}>
-                  <MaterialIcons name="menu-book" size={24} color={colors.charcoal} />
+                  <MaterialIcons name="menu-book" size={24} color={theme.textPrimary} />
                 </View>
                 <View style={styles.courseSelectorText}>
                   <Text style={styles.courseSelectorLabel}>SELECT COURSE</Text>
@@ -143,7 +147,7 @@ const HomeScreen = () => {
                   </Text>
                 </View>
               </View>
-              <MaterialIcons name="expand-more" size={24} color={colors.labelGray} />
+              <MaterialIcons name="expand-more" size={24} color={theme.textSecondary} />
             </TouchableOpacity>
 
             {/* Start Button */}
@@ -155,7 +159,7 @@ const HomeScreen = () => {
               accessibilityLabel="Start studying session"
               accessibilityRole="button"
             >
-              <MaterialIcons name="play-circle-filled" size={28} color={colors.white} />
+              <MaterialIcons name="play-circle-filled" size={28} color={theme.white} />
               <Text style={styles.startButtonText}>Start Session</Text>
             </TouchableOpacity>
           </View>
@@ -177,7 +181,7 @@ const HomeScreen = () => {
           <View style={styles.agendaList}>
             {todayItems.length === 0 ? (
               <GlassCard style={styles.emptyState}>
-                <MaterialIcons name="event-available" size={48} color={colors.labelGray} style={{ opacity: 0.3 }} />
+                <MaterialIcons name="event-available" size={48} color={theme.textSecondary} style={{ opacity: 0.3 }} />
                 <Text style={styles.emptyStateText}>No classes or assignments today</Text>
                 <Text style={styles.emptyStateSubtext}>Enjoy your free day!</Text>
               </GlassCard>
@@ -210,7 +214,7 @@ const HomeScreen = () => {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Course</Text>
               <TouchableOpacity onPress={() => setShowCoursePicker(false)} accessibilityLabel="Close course picker" accessibilityRole="button">
-                <MaterialIcons name="close" size={24} color={colors.charcoal} />
+                <MaterialIcons name="close" size={24} color={theme.textPrimary} />
               </TouchableOpacity>
             </View>
             <FlatList
@@ -233,7 +237,7 @@ const HomeScreen = () => {
                     <Text style={styles.courseOptionSubtitle}>{course.name}</Text>
                   </View>
                   {selectedCourseId === course.id && (
-                    <MaterialIcons name="check" size={24} color={colors.primaryAccent} />
+                    <MaterialIcons name="check" size={24} color={theme.primaryAccent} />
                   )}
                 </TouchableOpacity>
               )}
@@ -252,7 +256,7 @@ function getTimeOfDay(): string {
   return 'Evening';
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   scrollView: {
     flex: 1,
   },
@@ -266,12 +270,12 @@ const styles = StyleSheet.create({
   },
   greeting: {
     ...typography.label,
-    color: colors.primaryAccent,
+    color: theme.primaryAccent,
     marginBottom: spacing.xs,
   },
   title: {
     ...typography.h1,
-    color: colors.charcoal,
+    color: theme.textPrimary,
   },
   startCard: {
     padding: spacing.lg,
@@ -288,20 +292,20 @@ const styles = StyleSheet.create({
   },
   startCardLabel: {
     ...typography.labelSmall,
-    color: colors.primaryAccent,
+    color: theme.primaryAccent,
     marginBottom: spacing.sm,
   },
   startCardTitle: {
     ...typography.h1,
-    color: colors.charcoal,
+    color: theme.textPrimary,
     marginBottom: spacing.xs,
   },
   startCardSubtitle: {
     ...typography.small,
-    color: colors.labelGray,
+    color: theme.textSecondary,
   },
   courseSelector: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.6)',
     borderRadius: 16,
     padding: spacing.md,
     flexDirection: 'row',
@@ -309,7 +313,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderColor: theme.glassBorder,
   },
   courseSelectorContent: {
     flexDirection: 'row',
@@ -317,7 +321,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   courseSelectorIcon: {
-    backgroundColor: 'rgba(26, 28, 30, 0.05)',
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(26, 28, 30, 0.05)',
     padding: 10,
     borderRadius: 12,
     marginRight: spacing.md,
@@ -327,15 +331,15 @@ const styles = StyleSheet.create({
   },
   courseSelectorLabel: {
     ...typography.labelSmall,
-    color: colors.labelGray,
+    color: theme.textSecondary,
     marginBottom: 2,
   },
   courseSelectorValue: {
     ...typography.bodySemibold,
-    color: colors.charcoal,
+    color: theme.textPrimary,
   },
   startButton: {
-    backgroundColor: colors.charcoal,
+    backgroundColor: theme.isDark ? theme.primaryAccent : theme.charcoal,
     borderRadius: 16,
     paddingVertical: spacing.md + 4,
     flexDirection: 'row',
@@ -348,7 +352,7 @@ const styles = StyleSheet.create({
   },
   startButtonText: {
     ...typography.bodySemibold,
-    color: colors.white,
+    color: theme.isDark ? theme.charcoal : theme.white,
     fontSize: 18,
   },
   blurCircle1: {
@@ -357,7 +361,7 @@ const styles = StyleSheet.create({
     right: -64,
     width: 192,
     height: 192,
-    backgroundColor: colors.primaryAccent,
+    backgroundColor: theme.primaryAccent,
     opacity: 0.15,
     borderRadius: 96,
   },
@@ -383,11 +387,11 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...typography.h3,
-    color: colors.charcoal,
+    color: theme.textPrimary,
   },
   viewAll: {
     ...typography.smallMedium,
-    color: colors.primaryAccent,
+    color: theme.primaryAccent,
   },
   agendaList: {
     gap: spacing.sm,
@@ -398,12 +402,12 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     ...typography.bodySemibold,
-    color: colors.labelGray,
+    color: theme.textSecondary,
     marginTop: spacing.md,
   },
   emptyStateSubtext: {
     ...typography.small,
-    color: colors.labelGray,
+    color: theme.textSecondary,
     opacity: 0.7,
     marginTop: spacing.xs,
   },
@@ -413,7 +417,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: colors.white,
+    backgroundColor: theme.cardBackground,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingTop: spacing.lg,
@@ -429,7 +433,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     ...typography.h3,
-    color: colors.charcoal,
+    color: theme.textPrimary,
   },
   courseOption: {
     flexDirection: 'row',
@@ -437,7 +441,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     paddingHorizontal: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
+    borderBottomColor: theme.border,
   },
   courseColorDot: {
     width: 12,
@@ -450,14 +454,13 @@ const styles = StyleSheet.create({
   },
   courseOptionTitle: {
     ...typography.bodySemibold,
-    color: colors.charcoal,
+    color: theme.textPrimary,
   },
   courseOptionSubtitle: {
     ...typography.small,
-    color: colors.labelGray,
+    color: theme.textSecondary,
     marginTop: 2,
   },
 });
 
 export default HomeScreen;
-

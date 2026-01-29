@@ -3,6 +3,7 @@ import { CourseProvider } from './CourseContext';
 import { AssignmentProvider } from './AssignmentContext';
 import { StudySessionProvider } from './StudySessionContext';
 import { SettingsProvider } from './SettingsContext';
+import { ThemeProvider } from './ThemeContext';
 
 interface AppProviderProps {
   children: ReactNode;
@@ -11,13 +12,15 @@ interface AppProviderProps {
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   return (
     <SettingsProvider>
-      <CourseProvider>
-        <AssignmentProvider>
-          <StudySessionProvider>
-            {children}
-          </StudySessionProvider>
-        </AssignmentProvider>
-      </CourseProvider>
+      <ThemeProvider>
+        <CourseProvider>
+          <AssignmentProvider>
+            <StudySessionProvider>
+              {children}
+            </StudySessionProvider>
+          </AssignmentProvider>
+        </CourseProvider>
+      </ThemeProvider>
     </SettingsProvider>
   );
 };

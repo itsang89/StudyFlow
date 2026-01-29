@@ -1,19 +1,23 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { GlassCard } from '../components/GlassCard';
 import { useCourses } from '../context/CourseContext';
-import { colors } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
+import { ThemeColors } from '../theme/colors';
 import { typography } from '../theme/typography';
-import { commonStyles, spacing } from '../theme/styles';
+import { getCommonStyles, spacing } from '../theme/styles';
 import { SettingsStackParamList } from '../navigation/types';
 import { getDayShortName } from '../utils/dateHelpers';
 
 type CoursesListScreenNavigationProp = StackNavigationProp<SettingsStackParamList, 'CoursesList'>;
 
 const CoursesListScreen = () => {
+  const theme = useTheme();
+  const commonStyles = getCommonStyles(theme);
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const navigation = useNavigation<CoursesListScreenNavigationProp>();
   const { courses } = useCourses();
 
@@ -27,7 +31,7 @@ const CoursesListScreen = () => {
           accessibilityLabel="Go back"
           accessibilityRole="button"
         >
-          <MaterialIcons name="arrow-back" size={24} color={colors.charcoal} />
+          <MaterialIcons name="arrow-back" size={24} color={theme.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Courses</Text>
         <View style={styles.placeholder} />
@@ -40,7 +44,7 @@ const CoursesListScreen = () => {
       >
         {courses.length === 0 ? (
           <GlassCard style={styles.emptyState}>
-            <MaterialIcons name="school" size={64} color={colors.labelGray} style={{ opacity: 0.3 }} />
+            <MaterialIcons name="school" size={64} color={theme.textSecondary} style={{ opacity: 0.3 }} />
             <Text style={styles.emptyStateText}>No courses yet</Text>
             <Text style={styles.emptyStateSubtext}>Tap + to add your first course</Text>
           </GlassCard>
@@ -65,19 +69,19 @@ const CoursesListScreen = () => {
                         <Text style={styles.courseCode}>{course.code}</Text>
                         <Text style={styles.courseName}>{course.name}</Text>
                       </View>
-                      <MaterialIcons name="chevron-right" size={24} color={colors.labelGray} />
+                      <MaterialIcons name="chevron-right" size={24} color={theme.textSecondary} />
                     </View>
                     
                     {course.instructor && (
                       <View style={styles.courseDetail}>
-                        <MaterialIcons name="person" size={16} color={colors.labelGray} />
+                        <MaterialIcons name="person" size={16} color={theme.textSecondary} />
                         <Text style={styles.courseDetailText}>{course.instructor}</Text>
                       </View>
                     )}
                     
                     {course.location && (
                       <View style={styles.courseDetail}>
-                        <MaterialIcons name="place" size={16} color={colors.labelGray} />
+                        <MaterialIcons name="place" size={16} color={theme.textSecondary} />
                         <Text style={styles.courseDetailText}>{course.location}</Text>
                       </View>
                     )}
@@ -109,13 +113,13 @@ const CoursesListScreen = () => {
         accessibilityLabel="Add new course"
         accessibilityRole="button"
       >
-        <MaterialIcons name="add" size={28} color={colors.white} />
+        <MaterialIcons name="add" size={28} color={theme.white} />
       </TouchableOpacity>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -132,7 +136,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...typography.h4,
-    color: colors.charcoal,
+    color: theme.textPrimary,
   },
   placeholder: {
     width: 40,
@@ -173,12 +177,12 @@ const styles = StyleSheet.create({
   },
   courseCode: {
     ...typography.bodySemibold,
-    color: colors.charcoal,
+    color: theme.textPrimary,
     fontSize: 17,
   },
   courseName: {
     ...typography.body,
-    color: colors.labelGray,
+    color: theme.textSecondary,
     marginTop: 2,
   },
   courseDetail: {
@@ -189,7 +193,7 @@ const styles = StyleSheet.create({
   },
   courseDetailText: {
     ...typography.small,
-    color: colors.labelGray,
+    color: theme.textSecondary,
   },
   scheduleChips: {
     flexDirection: 'row',
@@ -198,14 +202,14 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   scheduleChip: {
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
     borderRadius: 8,
   },
   scheduleChipText: {
     ...typography.tiny,
-    color: colors.labelGray,
+    color: theme.textSecondary,
     fontSize: 11,
   },
   emptyState: {
@@ -215,12 +219,12 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     ...typography.bodySemibold,
-    color: colors.labelGray,
+    color: theme.textSecondary,
     marginTop: spacing.md,
   },
   emptyStateSubtext: {
     ...typography.small,
-    color: colors.labelGray,
+    color: theme.textSecondary,
     opacity: 0.7,
     marginTop: spacing.xs,
   },
@@ -231,10 +235,10 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.charcoal,
+    backgroundColor: theme.isDark ? theme.primaryAccent : theme.charcoal,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.black,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -243,4 +247,3 @@ const styles = StyleSheet.create({
 });
 
 export default CoursesListScreen;
-

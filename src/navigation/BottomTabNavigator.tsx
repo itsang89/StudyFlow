@@ -3,12 +3,13 @@ import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { MaterialIcons } from '@expo/vector-icons';
-import { colors } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
+import { ThemeColors } from '../theme/colors';
 import { typography } from '../theme/typography';
-import { glassStyles, spacing } from '../theme/styles';
+import { getGlassStyles, spacing } from '../theme/styles';
 import { RootTabParamList, HomeStackParamList, ToDoStackParamList, CalendarStackParamList, SettingsStackParamList } from './types';
 
-// Import screens (we'll create these next)
+// Import screens
 import HomeScreen from '../screens/HomeScreen';
 import TimerScreen from '../screens/TimerScreen';
 import AssignmentsScreen from '../screens/AssignmentsScreen';
@@ -84,9 +85,10 @@ interface TabBarButtonProps {
   icon: keyof typeof MaterialIcons.glyphMap;
   isFocused: boolean;
   onPress: () => void;
+  theme: ThemeColors;
 }
 
-const TabBarButton: React.FC<TabBarButtonProps> = ({ label, icon, isFocused, onPress }) => {
+const TabBarButton: React.FC<TabBarButtonProps> = ({ label, icon, isFocused, onPress, theme }) => {
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -99,26 +101,29 @@ const TabBarButton: React.FC<TabBarButtonProps> = ({ label, icon, isFocused, onP
       <MaterialIcons
         name={icon}
         size={26}
-        color={isFocused ? colors.charcoal : colors.labelGray}
+        color={isFocused ? (theme.isDark ? theme.primaryAccent : theme.charcoal) : theme.textSecondary}
         style={{ opacity: isFocused ? 1 : 0.6 }}
       />
       <Text
         style={[
           styles.tabLabel,
           {
-            color: isFocused ? colors.charcoal : colors.labelGray,
+            color: isFocused ? (theme.isDark ? theme.primaryAccent : theme.charcoal) : theme.textSecondary,
             opacity: isFocused ? 1 : 0.6,
           },
         ]}
       >
         {label}
       </Text>
-      {isFocused && <View style={styles.indicator} />}
+      {isFocused && <View style={[styles.indicator, { backgroundColor: theme.isDark ? theme.primaryAccent : theme.charcoal }]} />}
     </TouchableOpacity>
   );
 };
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
+  const theme = useTheme();
+  const glassStyles = getGlassStyles(theme);
+
   return (
     <View style={[styles.tabBar, glassStyles.nav]}>
       <View style={styles.tabBarContent}>
@@ -171,6 +176,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
               icon={icon}
               isFocused={isFocused}
               onPress={onPress}
+              theme={theme}
             />
           );
         })}
@@ -225,8 +231,6 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: colors.charcoal,
     marginTop: 2,
   },
 });
-

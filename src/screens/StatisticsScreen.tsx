@@ -5,15 +5,19 @@ import { PieChart, BarChart } from 'react-native-chart-kit';
 import { GlassCard } from '../components/GlassCard';
 import { useCourses } from '../context/CourseContext';
 import { useStudySessions } from '../context/StudySessionContext';
-import { colors } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
+import { ThemeColors } from '../theme/colors';
 import { typography } from '../theme/typography';
-import { commonStyles, spacing } from '../theme/styles';
+import { getCommonStyles, spacing } from '../theme/styles';
 import { formatDuration, formatDurationLong } from '../utils/timeHelpers';
 import { formatDate, isSameDay } from '../utils/dateHelpers';
 
 const screenWidth = Dimensions.get('window').width;
 
 const StatisticsScreen = () => {
+  const theme = useTheme();
+  const commonStyles = getCommonStyles(theme);
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const { courses } = useCourses();
   const { sessions, getTotalStudyTime, getWeeklyStudyTime } = useStudySessions();
 
@@ -38,12 +42,12 @@ const StatisticsScreen = () => {
         return {
           courseId,
           courseName: course?.code || 'Unknown',
-          courseColor: course?.color || colors.primaryAccent,
+          courseColor: course?.color || theme.primaryAccent,
           duration,
         };
       })
       .sort((a, b) => b.duration - a.duration);
-  }, [sessions, courses]);
+  }, [sessions, courses, theme]);
 
   // Get last 7 days of study time
   const weeklyData = useMemo(() => {
@@ -78,9 +82,9 @@ const StatisticsScreen = () => {
     name: item.courseName,
     population: item.duration / 60, // Convert to minutes
     color: item.courseColor,
-    legendFontColor: colors.labelGray,
+    legendFontColor: theme.textSecondary,
     legendFontSize: 12,
-  })), [studyByCourse]);
+  })), [studyByCourse, theme]);
 
   // Bar chart data
   const barChartData = useMemo(() => ({
@@ -93,23 +97,23 @@ const StatisticsScreen = () => {
   }), [weeklyData]);
 
   const chartConfig = {
-    backgroundColor: colors.white,
-    backgroundGradientFrom: colors.white,
-    backgroundGradientTo: colors.white,
+    backgroundColor: theme.cardBackground,
+    backgroundGradientFrom: theme.cardBackground,
+    backgroundGradientTo: theme.cardBackground,
     decimalPlaces: 1,
     color: (opacity = 1) => `rgba(19, 164, 236, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
+    labelColor: (opacity = 1) => theme.isDark ? `rgba(148, 163, 184, ${opacity})` : `rgba(107, 114, 128, ${opacity})`,
     style: {
       borderRadius: 16,
     },
     propsForDots: {
       r: '4',
       strokeWidth: '2',
-      stroke: colors.primaryAccent,
+      stroke: theme.primaryAccent,
     },
     propsForBackgroundLines: {
       strokeDasharray: '',
-      stroke: 'rgba(0, 0, 0, 0.05)',
+      stroke: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
     },
   };
 
@@ -143,7 +147,7 @@ const StatisticsScreen = () => {
     return (
       <GlassCard key={session.id} style={styles.sessionCard}>
         <View 
-          style={[styles.sessionColorBar, { backgroundColor: course?.color || colors.primaryAccent }]} 
+          style={[styles.sessionColorBar, { backgroundColor: course?.color || theme.primaryAccent }]} 
           accessibilityLabel={`Course color for ${course?.code || 'Unknown'}`}
         />
         <View style={styles.sessionContent}>
@@ -160,7 +164,7 @@ const StatisticsScreen = () => {
         </View>
       </GlassCard>
     );
-  }, [courses]);
+  }, [courses, theme, styles]);
 
   return (
     <View style={commonStyles.container}>
@@ -179,11 +183,11 @@ const StatisticsScreen = () => {
             <MaterialIcons 
               name={weeklyPercentageChange >= 0 ? 'trending-up' : 'trending-down'} 
               size={18} 
-              color={weeklyPercentageChange >= 0 ? colors.success : colors.error} 
+              color={weeklyPercentageChange >= 0 ? theme.success : theme.error} 
             />
             <Text style={[
               styles.changeText,
-              { color: weeklyPercentageChange >= 0 ? colors.success : colors.error }
+              { color: weeklyPercentageChange >= 0 ? theme.success : theme.error }
             ]}>
               {Math.abs(weeklyPercentageChange)}% {weeklyPercentageChange >= 0 ? 'increase' : 'decrease'}
             </Text>
@@ -243,7 +247,7 @@ const StatisticsScreen = () => {
           <View style={styles.sessionsList}>
             {sessions.length === 0 ? (
               <GlassCard style={styles.emptyState}>
-                <MaterialIcons name="timer-off" size={48} color={colors.labelGray} style={{ opacity: 0.3 }} />
+                <MaterialIcons name="timer-off" size={48} color={theme.textSecondary} style={{ opacity: 0.3 }} />
                 <Text style={styles.emptyStateText}>No study sessions yet</Text>
                 <Text style={styles.emptyStateSubtext}>Start a timer to track your study time</Text>
               </GlassCard>
@@ -265,7 +269,7 @@ const StatisticsScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   scrollView: {
     flex: 1,
   },
@@ -279,12 +283,12 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     ...typography.label,
-    color: colors.textLight,
+    color: theme.textLight,
     marginBottom: spacing.sm,
   },
   massiveTime: {
     ...typography.massive,
-    color: colors.charcoal,
+    color: theme.textPrimary,
     marginBottom: spacing.xs,
   },
   changeIndicator: {
@@ -307,12 +311,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...typography.h4,
-    color: colors.charcoal,
+    color: theme.textPrimary,
     fontSize: 17,
   },
   sectionSubtitle: {
     ...typography.smallMedium,
-    color: colors.textLight,
+    color: theme.textLight,
     fontSize: 13,
   },
   chartCard: {
@@ -348,20 +352,20 @@ const styles = StyleSheet.create({
   },
   sessionCourse: {
     ...typography.bodySemibold,
-    color: colors.charcoal,
+    color: theme.textPrimary,
   },
   sessionDuration: {
     ...typography.bodyMedium,
-    color: colors.primaryAccent,
+    color: theme.primaryAccent,
   },
   sessionDate: {
     ...typography.small,
-    color: colors.labelGray,
+    color: theme.textSecondary,
     marginBottom: spacing.xs,
   },
   sessionNotes: {
     ...typography.small,
-    color: colors.labelGray,
+    color: theme.textSecondary,
     fontStyle: 'italic',
   },
   emptyState: {
@@ -370,12 +374,12 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     ...typography.bodySemibold,
-    color: colors.labelGray,
+    color: theme.textSecondary,
     marginTop: spacing.md,
   },
   emptyStateSubtext: {
     ...typography.small,
-    color: colors.labelGray,
+    color: theme.textSecondary,
     opacity: 0.7,
     marginTop: spacing.xs,
     textAlign: 'center',
@@ -383,4 +387,3 @@ const styles = StyleSheet.create({
 });
 
 export default StatisticsScreen;
-

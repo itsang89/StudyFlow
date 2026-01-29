@@ -1,8 +1,9 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { GlassCard } from './GlassCard';
-import { colors } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
+import { ThemeColors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/styles';
 import { addOpacity } from '../utils/colorHelpers';
@@ -31,6 +32,9 @@ export const AgendaItem: React.FC<AgendaItemProps> = memo(({
   badge,
   onPress,
 }) => {
+  const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   const content = (
     <GlassCard style={styles.container}>
       <View style={styles.content}>
@@ -68,7 +72,7 @@ export const AgendaItem: React.FC<AgendaItemProps> = memo(({
   return content;
 });
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   container: {
     padding: spacing.md,
     flexDirection: 'row',
@@ -93,12 +97,12 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.bodySemibold,
-    color: colors.charcoal,
+    color: theme.textPrimary,
     marginBottom: spacing.xs,
   },
   subtitle: {
     ...typography.small,
-    color: colors.labelGray,
+    color: theme.textSecondary,
   },
   detailsRow: {
     flexDirection: 'row',
@@ -107,12 +111,12 @@ const styles = StyleSheet.create({
   },
   detail: {
     ...typography.smallMedium,
-    color: colors.labelGray,
+    color: theme.textSecondary,
     fontSize: 13,
   },
   separator: {
     ...typography.tiny,
-    color: colors.labelGray,
+    color: theme.textSecondary,
     opacity: 0.3,
   },
   badge: {
@@ -127,4 +131,3 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
 });
-

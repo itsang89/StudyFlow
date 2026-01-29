@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, KeyboardAvoidingView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -7,9 +7,10 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { GlassCard } from '../components/GlassCard';
 import { useCourses } from '../context/CourseContext';
 import { useAssignments } from '../context/AssignmentContext';
-import { colors } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
+import { ThemeColors } from '../theme/colors';
 import { typography } from '../theme/typography';
-import { commonStyles, spacing } from '../theme/styles';
+import { getCommonStyles, spacing } from '../theme/styles';
 import { ToDoStackParamList } from '../navigation/types';
 import { AssignmentType, PriorityLevel } from '../types/assignment';
 import { formatDateTime } from '../utils/dateHelpers';
@@ -18,6 +19,9 @@ type AddEditAssignmentScreenNavigationProp = StackNavigationProp<ToDoStackParamL
 type AddEditAssignmentScreenRouteProp = RouteProp<ToDoStackParamList, 'AddEditAssignment'>;
 
 const AddEditAssignmentScreen = () => {
+  const theme = useTheme();
+  const commonStyles = getCommonStyles(theme);
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const navigation = useNavigation<AddEditAssignmentScreenNavigationProp>();
   const route = useRoute<AddEditAssignmentScreenRouteProp>();
   const { assignmentId } = route.params;
@@ -79,7 +83,7 @@ const AddEditAssignmentScreen = () => {
           accessibilityLabel="Cancel and go back"
           accessibilityRole="button"
         >
-          <MaterialIcons name="close" size={24} color={colors.charcoal} />
+          <MaterialIcons name="close" size={24} color={theme.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{isEditing ? 'Edit' : 'Add'} Assignment</Text>
         <TouchableOpacity 
@@ -88,7 +92,7 @@ const AddEditAssignmentScreen = () => {
           accessibilityLabel="Save assignment"
           accessibilityRole="button"
         >
-          <MaterialIcons name="check" size={24} color={colors.primaryAccent} />
+          <MaterialIcons name="check" size={24} color={theme.primaryAccent} />
         </TouchableOpacity>
       </View>
 
@@ -103,7 +107,7 @@ const AddEditAssignmentScreen = () => {
           <TextInput
             style={styles.input}
             placeholder="Assignment title"
-            placeholderTextColor={colors.labelGray}
+            placeholderTextColor={theme.textSecondary}
             value={title}
             onChangeText={setTitle}
             accessibilityLabel="Assignment title input"
@@ -149,7 +153,7 @@ const AddEditAssignmentScreen = () => {
             accessibilityLabel="Change due date and time"
             accessibilityRole="button"
           >
-            <MaterialIcons name="calendar-today" size={20} color={colors.primaryAccent} />
+            <MaterialIcons name="calendar-today" size={20} color={theme.primaryAccent} />
             <Text style={styles.dateButtonText}>{formatDateTime(dueDate)}</Text>
           </TouchableOpacity>
           {showDatePicker && (
@@ -229,7 +233,7 @@ const AddEditAssignmentScreen = () => {
           <TextInput
             style={[styles.input, styles.textArea]}
             placeholder="Add notes or details..."
-            placeholderTextColor={colors.labelGray}
+            placeholderTextColor={theme.textSecondary}
             value={description}
             onChangeText={setDescription}
             multiline
@@ -248,7 +252,7 @@ const AddEditAssignmentScreen = () => {
             accessibilityLabel="Delete this assignment"
             accessibilityRole="button"
           >
-            <MaterialIcons name="delete-outline" size={20} color={colors.error} />
+            <MaterialIcons name="delete-outline" size={20} color={theme.error} />
             <Text style={styles.deleteButtonText}>Delete Assignment</Text>
           </TouchableOpacity>
         )}
@@ -257,7 +261,7 @@ const AddEditAssignmentScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -265,7 +269,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl + 16,
     paddingBottom: spacing.md,
-    backgroundColor: colors.bgMain,
+    backgroundColor: theme.bgMain,
   },
   headerButton: {
     width: 40,
@@ -275,7 +279,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...typography.h4,
-    color: colors.charcoal,
+    color: theme.textPrimary,
   },
   scrollView: {
     flex: 1,
@@ -289,17 +293,17 @@ const styles = StyleSheet.create({
   },
   label: {
     ...typography.bodyMedium,
-    color: colors.charcoal,
+    color: theme.textPrimary,
     marginBottom: spacing.sm,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.5)',
     borderRadius: 12,
     padding: spacing.md,
     ...typography.body,
-    color: colors.charcoal,
+    color: theme.textPrimary,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderColor: theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.8)',
   },
   textArea: {
     minHeight: 100,
@@ -314,14 +318,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.5)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderColor: theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.8)',
     marginRight: spacing.sm,
   },
   courseChipSelected: {
-    backgroundColor: colors.primaryAccent,
-    borderColor: colors.primaryAccent,
+    backgroundColor: theme.primaryAccent,
+    borderColor: theme.primaryAccent,
   },
   courseChipDot: {
     width: 8,
@@ -331,24 +335,24 @@ const styles = StyleSheet.create({
   },
   courseChipText: {
     ...typography.bodyMedium,
-    color: colors.charcoal,
+    color: theme.textPrimary,
   },
   courseChipTextSelected: {
-    color: colors.white,
+    color: theme.isDark ? theme.charcoal : theme.white,
   },
   dateButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.5)',
     borderRadius: 12,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderColor: theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.8)',
   },
   dateButtonText: {
     ...typography.body,
-    color: colors.charcoal,
+    color: theme.textPrimary,
   },
   optionsRow: {
     flexDirection: 'row',
@@ -359,21 +363,21 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.5)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderColor: theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.8)',
     alignItems: 'center',
   },
   optionChipSelected: {
-    backgroundColor: colors.charcoal,
-    borderColor: colors.charcoal,
+    backgroundColor: theme.isDark ? theme.primaryAccent : theme.charcoal,
+    borderColor: theme.isDark ? theme.primaryAccent : theme.charcoal,
   },
   optionChipText: {
     ...typography.bodyMedium,
-    color: colors.charcoal,
+    color: theme.textPrimary,
   },
   optionChipTextSelected: {
-    color: colors.white,
+    color: theme.isDark ? theme.charcoal : theme.white,
   },
   deleteButton: {
     flexDirection: 'row',
@@ -385,9 +389,8 @@ const styles = StyleSheet.create({
   },
   deleteButtonText: {
     ...typography.bodyMedium,
-    color: colors.error,
+    color: theme.error,
   },
 });
 
 export default AddEditAssignmentScreen;
-

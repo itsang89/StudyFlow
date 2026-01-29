@@ -1,8 +1,9 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { courseColors } from '../theme/colors';
-import { spacing, commonStyles } from '../theme/styles';
+import { useTheme } from '../context/ThemeContext';
+import { ThemeColors, courseColors } from '../theme/colors';
+import { spacing, getCommonStyles } from '../theme/styles';
 
 interface CourseColorPickerProps {
   selectedColor: string;
@@ -13,6 +14,10 @@ export const CourseColorPicker: React.FC<CourseColorPickerProps> = memo(({
   selectedColor,
   onColorSelect,
 }) => {
+  const theme = useTheme();
+  const commonStyles = getCommonStyles(theme);
+  const styles = useMemo(() => createStyles(theme, commonStyles), [theme, commonStyles]);
+
   const handleColorPress = useCallback((color: string) => {
     onColorSelect(color);
   }, [onColorSelect]);
@@ -42,7 +47,7 @@ export const CourseColorPicker: React.FC<CourseColorPickerProps> = memo(({
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors, commonStyles: any) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -60,6 +65,7 @@ const styles = StyleSheet.create({
   },
   selected: {
     ...commonStyles.shadowLarge,
+    borderWidth: 2,
+    borderColor: theme.white,
   },
 });
-
